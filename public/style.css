@@ -467,3 +467,87 @@ html, body { height: 100%; overflow: hidden; margin: 0; }
   .header__page-title { font-size: var(--text-base); }
   .kpi-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ============================================================
+   Auth / Login Screen
+   ============================================================ */
+.login-screen {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+  padding: var(--space-4);
+}
+.login-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: var(--space-10) var(--space-8);
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+}
+.login-logo {
+  color: var(--color-primary);
+  margin-bottom: var(--space-4);
+}
+.login-logo svg { width: 56px; height: 56px; }
+.login-title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: var(--space-2);
+}
+.login-subtitle {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-8);
+}
+.btn--login {
+  width: 100%;
+  padding: 12px 24px;
+  font-size: var(--text-base);
+  justify-content: center;
+  margin-bottom: var(--space-3);
+}
+.login-note {
+  font-size: var(--text-xs);
+  color: var(--color-text-faint);
+}
+
+/* ── User badge in header ──────────────────────────────────── */
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.user-badge__info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+}
+.user-badge__name {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text);
+}
+.user-badge__role {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+.user-badge__logout {
+  color: var(--color-text-muted);
+}
+@media (max-width: 768px) {
+  .user-badge__info { display: none; }
+}

@@ -1057,12 +1057,25 @@
      if (hamburger) hamburger.innerHTML = '<i data-lucide="menu" style="width:20px;height:20px"></i>'; 
  } 
  /* ── Init ───────────────────────────────────────── */ 
- document.addEventListener("DOMContentLoaded", () => { 
-     setupDarkMode(); 
-     setupMobileMenu(); 
-     setupSidebar(); 
-     setupGlobalSearch(); 
-     renderHeaderIcons(); 
-     window.addEventListener("hashchange", route); 
-     route(); 
+ document.addEventListener("DOMContentLoaded", () => {
+     setupDarkMode();
+     if (window.AUTH) {
+       window.AUTH.init().then(() => {
+         window.addEventListener("auth:ready", () => {
+           setupMobileMenu();
+           setupSidebar();
+           setupGlobalSearch();
+           renderHeaderIcons();
+           window.addEventListener("hashchange", route);
+           route();
+         });
+       });
+     } else {
+       setupMobileMenu();
+       setupSidebar();
+       setupGlobalSearch();
+       renderHeaderIcons();
+       window.addEventListener("hashchange", route);
+       route();
+     }
  }); })();
