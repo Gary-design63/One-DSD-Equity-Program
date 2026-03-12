@@ -38,6 +38,13 @@
 
   /* ── Init ───────────────────────────────────────────────── */
   async function initAuth() {
+    // Localhost = owner machine, skip auth entirely, grant full admin access
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+      currentAccount = { name: "Program Owner", username: "admin@localhost", _isLocalAdmin: true };
+      window.dispatchEvent(new CustomEvent("auth:ready", { detail: { user: { name: "Program Owner", email: "admin@localhost", isAdmin: true } } }));
+      return;
+    }
+
     if (typeof msal === "undefined") {
       console.error("MSAL not loaded");
       return;
@@ -83,6 +90,9 @@
   /* ── Get current user ───────────────────────────────────── */
   function getUser() {
     if (!currentAccount) return null;
+    if (currentAccount._isLocalAdmin) {
+      return { name: 'Program Owner', email: 'admin@localhost', isAdmin: true };
+    }
     return {
       name: currentAccount.name || currentAccount.username,
       email: currentAccount.username,
