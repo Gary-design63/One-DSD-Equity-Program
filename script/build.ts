@@ -1,29 +1,24 @@
-import { build } from "vite";
 import { build as esbuild } from "esbuild";
+import { cpSync, mkdirSync, copyFileSync, existsSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
+const distPublic = path.resolve(root, "dist/public");
 
-console.log("Building client…");
-await build({
-  root: path.resolve(root, "client"),
-  base: "/",
-  plugins: [(await import("@vitejs/plugin-react")).default()],
-  resolve: {
-    alias: {
-      "@": path.resolve(root, "client/src"),
-      "@shared": path.resolve(root, "shared"),
-    },
-  },
-  build: {
-    outDir: path.resolve(root, "dist/public"),
-    emptyOutDir: true,
-  },
-});
+// 1. Copy static frontend assets to dist/public/
+console.log("Copying static assets to dist/public…");
+mkdirSync(distPublic, { recursive: true });
 
-console.log("Building server…");
+// Copy everything from public/ into dist/public/
+cpSync(path.resolve(root, "public"), distPublic, { recursive: true });
+
+// Copy root index.html (it references the public/ assets)
+copyFileSync(path.resolve(root, "index.html"), path.resolve(distPublic, "index.html"));
+
+// 2. Bundle the Express server
+console.log("Bundling server…");
 await esbuild({
   entryPoints: [path.resolve(root, "server/index.ts")],
   bundle: true,
@@ -33,4 +28,4 @@ await esbuild({
   packages: "external",
 });
 
-console.log("Build complete.");
+console.log("Build complete. Run: NODE_ENV=production node dist/index.js");

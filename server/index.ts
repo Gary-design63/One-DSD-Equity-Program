@@ -3,7 +3,7 @@ import session from "express-session";
 import { createServer } from "http";
 import MemoryStore from "memorystore";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { serveDevStatic, serveStatic, log } from "./vite";
 
 const app = express();
 const MemStore = MemoryStore(session);
@@ -18,16 +18,16 @@ app.use(
     saveUninitialized: false,
     cookie: {
       secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxAge: 24 * 60 * 60 * 1000,
     },
     store: new MemStore({ checkPeriod: 86400000 }),
   })
 );
 
-// Request logger middleware
+// Request logger
 app.use((req, _res, next) => {
   const start = Date.now();
-  const path = req.path;
+  const reqPath = req.path;
   let capturedJson: unknown;
 
   const originalJson = _res.json.bind(_res);
@@ -37,14 +37,12 @@ app.use((req, _res, next) => {
   };
 
   _res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${_res.statusCode} in ${duration}ms`;
-      if (capturedJson) {
-        logLine += ` :: ${JSON.stringify(capturedJson).slice(0, 80)}`;
-      }
-      if (logLine.length > 120) logLine = logLine.slice(0, 119) + "…";
-      log(logLine);
+    if (reqPath.startsWith("/api")) {
+      const duration = Date.now() - start;
+      let line = `${req.method} ${reqPath} ${_res.statusCode} in ${duration}ms`;
+      if (capturedJson) line += ` :: ${JSON.stringify(capturedJson).slice(0, 80)}`;
+      if (line.length > 120) line = line.slice(0, 119) + "…";
+      log(line);
     }
   });
 
@@ -64,14 +62,12 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 const server = createServer(app);
 const PORT = Number(process.env.PORT ?? 5000);
 
-(async () => {
-  if (process.env.NODE_ENV === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
+if (process.env.NODE_ENV === "development") {
+  serveDevStatic(app);
+} else {
+  serveStatic(app);
+}
 
-  server.listen(PORT, "0.0.0.0", () => {
-    log(`Server running on port ${PORT}`);
-  });
-})();
+server.listen(PORT, "0.0.0.0", () => {
+  log(`Server running on port ${PORT} (${process.env.NODE_ENV ?? "production"})`);
+});
