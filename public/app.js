@@ -1060,16 +1060,15 @@
  document.addEventListener("DOMContentLoaded", () => {
      setupDarkMode();
      if (window.AUTH) {
-       window.AUTH.init().then(() => {
-         window.addEventListener("auth:ready", () => {
-           setupMobileMenu();
-           setupSidebar();
-           setupGlobalSearch();
-           renderHeaderIcons();
-           window.addEventListener("hashchange", route);
-           route();
-         });
+       window.addEventListener("auth:ready", () => {
+         setupMobileMenu();
+         setupSidebar();
+         setupGlobalSearch();
+         renderHeaderIcons();
+         window.addEventListener("hashchange", route);
+         route();
        });
+       window.AUTH.init();
      } else {
        setupMobileMenu();
        setupSidebar();
