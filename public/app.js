@@ -84,7 +84,7 @@
  const pageNames = { 
      dashboard: "Dashboard", "knowledge-base": "Knowledge Base", workflows: "Workflows", 
      templates: "Templates", metrics: "Metrics & Reporting", learning: "Learning Portal", 
-     assistant: "Assistant", roles: "Roles & Governance", actions: "Actions", risks: "Risks" 
+     assistant: "AI Agent Team", roles: "Roles & Governance", actions: "Actions", risks: "Risks"
  }; 
  function route() { 
      const hash = location.hash.slice(1) || "dashboard"; 
