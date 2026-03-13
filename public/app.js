@@ -120,7 +120,7 @@
          else if (page === "metrics") { renderMetrics(el); titleEl().textContent = "Metrics & Reporting"; } 
          else if (page === "learning" && id) { renderLearningDetail(el, id); titleEl().textContent = "Learning Portal"; } 
          else if (page === "learning") { renderLearning(el); titleEl().textContent = "Learning Portal"; } 
-         else if (page === "assistant") { renderAssistant(el); titleEl().textContent = "Assistant"; } 
+         else if (page === "assistant") { renderAssistantWithAgents(el); titleEl().textContent = "AI Agent Team"; }
          else if (page === "roles" && id) { renderRoleDetail(el, id); titleEl().textContent = "Roles & Governance"; } 
          else if (page === "roles") { renderRoles(el); titleEl().textContent = "Roles & Governance"; } 
          else if (page === "actions") { renderActions(el); titleEl().textContent = "Actions"; } 
@@ -1079,3 +1079,18 @@
        route();
      }
  }); })();
+
+/* ── AGENT ASSISTANT BRIDGE ────────────────────────────────────────────────
+   Routes the assistant page to the new multi-agent UI (agent.js).
+   Falls back to the original static assistant if agent.js is not loaded.
+   ────────────────────────────────────────────────────────────────────────── */
+function renderAssistantWithAgents(el) {
+  if (window.AGENT && typeof window.AGENT.init === "function") {
+    window.AGENT.init(el);
+    // Re-render Lucide icons after agent UI is injected
+    setTimeout(() => { if (typeof lucide !== "undefined") lucide.createIcons(); }, 100);
+  } else {
+    // Fallback to original static assistant
+    renderAssistant(el);
+  }
+}
