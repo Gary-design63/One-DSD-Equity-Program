@@ -24,6 +24,9 @@ dist-ssr
 *.sw?
 .vite/
 
+# Generated exports (regenerate locally with: python3 scripts/generate_docs.py)
+exports/
+
 # Backend — never commit secrets or the live database
 backend/.env
 backend/data/*.db
