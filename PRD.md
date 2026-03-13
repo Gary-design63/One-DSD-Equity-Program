@@ -637,12 +637,14 @@ Set in `index.html` before `agent.js` loads:
 
 ### VPS Sizing Guide
 
-| VPS Plan | Monthly | vCPU | RAM | Suitable For |
-|---|---|---|---|---|
-| KVM 1 | $6.49 | 1 | 4 GB | Development / testing |
-| **KVM 2** | $8.99 | 2 | 8 GB | **Recommended — production (1 Consultant + 150 staff)** |
-| KVM 4 | $12.99 | 4 | 16 GB | High traffic / future scale |
-| KVM 8 | $25.99 | 8 | 32 GB | Enterprise / multi-program |
+> **Key insight:** All AI computation runs on Anthropic's servers. The VPS only runs Node.js, SQLite, PM2, and Nginx — realistic peak usage is ~500 MB–1.5 GB RAM and < 5 GB storage. KVM 1 is technically sufficient today; KVM 2 is recommended for $2.50/mo more due to growth headroom for Phase 2 features (n8n, additional agents, more concurrent staff).
+
+| VPS Plan | Monthly | vCPU | RAM | Storage | Suitable For |
+|---|---|---|---|---|---|
+| KVM 1 | $6.49 | 1 | 4 GB | 50 GB | Development / testing only |
+| **KVM 2** | **$8.99** | **2** | **8 GB** | **100 GB** | **Recommended — production + Phase 2 headroom** |
+| KVM 4 | $12.99 | 4 | 16 GB | 200 GB | High traffic / future scale |
+| KVM 8 | $25.99 | 8 | 32 GB | 400 GB | Enterprise / multi-program |
 
 ---
 

@@ -13,10 +13,47 @@ Deploy this on a **Hostinger KVM VPS** (recommended: KVM 2 at $8.99/mo or higher
 
 ---
 
+## Hostinger Plan Selection
+
+### Why KVM 2 is the Right Choice
+
+The most important thing to understand: **all AI computation runs on Anthropic's servers, not your VPS.** The VPS is only responsible for:
+
+| What the VPS Actually Does | Resource Cost |
+|---|---|
+| Run Node.js + Express server | ~150 MB RAM |
+| Manage WebSocket connections | ~few KB per connection |
+| Make HTTPS calls to Anthropic API | Network I/O only — no local compute |
+| Read/write SQLite database | ~50–200 MB storage over 1 year |
+| Run PM2 + Nginx | ~70 MB RAM |
+| **Total realistic usage** | **~500 MB–1.5 GB RAM, < 5 GB storage** |
+
+### Plan Comparison
+
+| Plan | Price | vCPU | RAM | Storage | Verdict |
+|---|---|---|---|---|---|
+| KVM 1 | $6.49/mo | 1 | 4 GB | 50 GB | Technically sufficient for current system |
+| **KVM 2** | **$8.99/mo** | **2** | **8 GB** | **100 GB** | **Recommended — production + growth headroom** |
+| KVM 4 | $12.99/mo | 4 | 16 GB | 200 GB | Overkill for this use case |
+| KVM 8 | $25.99/mo | 8 | 32 GB | 400 GB | Enterprise-scale — not needed |
+
+### The $2.50/Month Decision
+
+**KVM 1 → KVM 2 costs $2.50/month more ($30/year)** for double the CPU, RAM, storage, and bandwidth. This headroom matters because:
+
+- Phase 2 features (n8n workflow automation, additional agents) will consume more RAM
+- Multiple staff members connecting simultaneously is handled more smoothly with 2 vCPU
+- SQLite + Node.js + PM2 + Nginx comfortably fits in 8 GB with room to spare
+- Migrating from KVM 1 to KVM 2 mid-deployment is disruptive; start right
+
+**Start with KVM 2.**
+
+---
+
 ## Hostinger VPS Setup
 
 ### 1. Provision the VPS
-1. Log into Hostinger → VPS → Order KVM 2 (or higher)
+1. Log into Hostinger → VPS → Order **KVM 2** ($8.99/mo)
 2. Choose **Ubuntu 22.04 LTS** as the OS
 3. Select server region: **United States** (best latency for Minnesota DHS)
 4. Note your VPS IP address
