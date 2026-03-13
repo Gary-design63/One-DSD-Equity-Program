@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, BookOpen, GitBranch, FileText, BarChart3,
-  GraduationCap, Bot, Users, CheckCircle2, AlertTriangle, X
+  GraduationCap, Bot, Users, CheckCircle2, AlertTriangle, X, Server
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { User } from '@/types';
@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { path: '/roles', label: 'Roles', icon: Users, adminOnly: true },
   { path: '/actions', label: 'Actions', icon: CheckCircle2, adminOnly: true },
   { path: '/risks', label: 'Risks', icon: AlertTriangle, adminOnly: true },
+  { path: '/deployment', label: 'Deployment', icon: Server, adminOnly: true },
 ];
 
 interface SidebarProps {

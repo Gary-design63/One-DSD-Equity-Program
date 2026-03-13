@@ -20,6 +20,7 @@ import Roles from './pages/Roles';
 import RoleDetail from './pages/RoleDetail';
 import Actions from './pages/Actions';
 import Risks from './pages/Risks';
+import Deployment from './pages/Deployment';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,6 +53,7 @@ export default function App() {
             <Route path="/roles/:id" element={<RoleDetail />} />
             <Route path="/actions" element={<Actions />} />
             <Route path="/risks" element={<Risks />} />
+            <Route path="/deployment" element={<Deployment />} />
             <Route path="*" element={<Dashboard />} />
           </Route>
         </Routes>
