@@ -1,73 +1,107 @@
-# Welcome to your Lovable project
+# One DSD Equity Program
 
-## Project info
+An AI-powered DEIA (Diversity, Equity, Inclusion, and Accessibility) operations system for the Equity and Inclusion Operations Consultant serving the Minnesota Department of Human Services, Disability Services Division (DSD).
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+The system enables one Consultant to operate at the capacity of a coordinated team — serving approximately 150 DSD staff members — through a multi-agent AI infrastructure.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## Architecture
 
-**Use Lovable**
+| Layer | Technology | Host |
+|---|---|---|
+| Frontend | Vanilla JS SPA | GitHub Pages (free) |
+| Backend | Node.js + Express + WebSocket | Hostinger KVM 2 VPS ($8.99/mo) |
+| AI Engine | 7 Claude agents via Anthropic API | Anthropic (claude-opus-4-6 / claude-sonnet-4-6) |
+| Database | SQLite | Local file on VPS |
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+The frontend is static and always available. AI agent features require the backend to be running on the VPS.
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## AI Agents
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+| Agent | Role |
+|---|---|
+| **Equity Compass** (coordinator) | Routes requests, synthesizes multi-domain answers |
+| **Policy Navigator** | ADA, MNDHR, state policy, compliance |
+| **Workflow Architect** | Process design, workflow stage management |
+| **Metrics Intelligence** | KPI tracking, trend analysis, reporting |
+| **Learning Curator** | Training programs, microlearning, staff development |
+| **Risk & Action Monitor** | Overdue actions, escalations, accountability |
+| **Community Intelligence** | Stakeholder engagement, outreach, co-design |
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## Quick Start (Local Development)
+
+**Frontend only** (no backend required — runs in static fallback mode):
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+# Serve the public/ directory with any static server
+npx serve public
+# or
+python3 -m http.server 8080 --directory public
 ```
 
-**Edit a file directly in GitHub**
+**With backend:**
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```sh
+# Terminal 1 — backend
+cd backend
+cp .env.example .env
+# Edit .env and add your ANTHROPIC_API_KEY
+npm install
+npm run dev
 
-**Use GitHub Codespaces**
+# Terminal 2 — frontend
+# Edit index.html and uncomment:
+# <script>window.AGENT_API_URL = 'http://localhost:3000';</script>
+npx serve public -p 8080
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## Deployment
 
-This project is built with:
+- **Frontend:** Push to `main` → GitHub Actions automatically deploys to GitHub Pages
+- **Backend:** See [`backend/DEPLOY.md`](backend/DEPLOY.md) for the full Hostinger VPS setup guide
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+**Recommended VPS:** Hostinger KVM 2 ($8.99/mo) — all AI computation is offloaded to Anthropic, so the VPS only runs Node.js + SQLite. See DEPLOY.md for plan comparison and reasoning.
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## Project Structure
 
-## Can I connect a custom domain to my Lovable project?
+```
+One-DSD-Equity-Program/
+├── public/                   # Frontend SPA (deployed to GitHub Pages)
+│   ├── index.html            # App shell
+│   ├── app.js                # Page routing and rendering
+│   ├── agent.js              # WebSocket client for AI agents
+│   ├── data.js               # Static program data
+│   ├── auth.js               # Azure AD authentication
+│   └── crud.js               # CRUD operations
+├── backend/                  # Node.js agent server (deployed to VPS)
+│   ├── server.js             # Express + WebSocket server
+│   ├── agents/               # 7 Claude AI agents
+│   ├── tools/                # Agent tool implementations
+│   ├── db/                   # SQLite schema and queries
+│   ├── .env.example          # Environment variable template
+│   └── DEPLOY.md             # VPS deployment guide
+├── .github/workflows/
+│   └── deploy.yml            # GitHub Pages CI/CD
+└── PRD.md                    # Full product requirements and system spec
+```
 
-Yes, you can!
+---
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Operating Costs
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+| Item | Cost |
+|---|---|
+| Frontend hosting (GitHub Pages) | Free |
+| Backend VPS (Hostinger KVM 2) | $8.99/mo |
+| Anthropic API — light use (1-2 queries/day) | ~$20-40/mo |
+| Anthropic API — moderate use (5-10 queries/day) | ~$80-150/mo |
+| **Total (moderate use)** | **~$90-160/mo** |
