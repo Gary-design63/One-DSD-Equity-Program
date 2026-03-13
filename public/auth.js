@@ -46,7 +46,8 @@
     }
 
     if (typeof msal === "undefined") {
-      console.error("MSAL not loaded");
+      console.error("MSAL not loaded — showing login screen");
+      showLoginScreen();
       return;
     }
 

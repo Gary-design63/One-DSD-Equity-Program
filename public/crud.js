@@ -175,7 +175,7 @@
           showToast("Action added successfully"); 
          } 
          closeModal(); 
-         window.dispatchEvent(new HashChangeEvent("hashchange")); 
+         window.dispatchEvent(new Event("hashchange")); 
      }); 
  } 
  function deleteAction(id) { 
@@ -185,7 +185,7 @@
          confirmDelete("Action", name, () => { 
              D.actions.splice(idx, 1); 
              showToast("Action deleted"); 
-             window.dispatchEvent(new HashChangeEvent("hashchange")); 
+             window.dispatchEvent(new Event("hashchange")); 
          }); 
      } 
  } 
@@ -228,7 +228,7 @@
              showToast("Risk added successfully"); 
          } 
          closeModal(); 
-         window.dispatchEvent(new HashChangeEvent("hashchange")); 
+         window.dispatchEvent(new Event("hashchange")); 
      }); 
  } 
  function deleteRisk(id) { 
@@ -238,7 +238,7 @@
          confirmDelete("Risk", name, () => { 
              D.risks.splice(idx, 1); 
              showToast("Risk deleted"); 
-             window.dispatchEvent(new HashChangeEvent("hashchange")); 
+             window.dispatchEvent(new Event("hashchange")); 
          }); 
      } 
  } 
@@ -250,7 +250,7 @@
      const d = doc || {}; 
      const batches = ["Governing Authority", "Institutional Context", "Equity Analysis and Engagement", 
          "Accessibility and Language Access", "Workforce Equity", "Service System Operations", 
-         "Training and Reusable Resources", "One DSD Program Core Internal", "Program Operations Internal", 
+         "Educational and Reusable Resources", "One DSD Program Core Internal", "Program Operations Internal", 
          "Data and Measurement Internal", "Learning Architecture Internal", "Templates Internal"]; 
      const body = `<form id="doc-form" class="modal-form"> 
          ${field("Title", "title", "text", d.title, { required: true, placeholder: "Full document title" })} 
@@ -301,7 +301,7 @@
              showToast("Document added successfully"); 
          } 
          closeModal(); 
-         window.dispatchEvent(new HashChangeEvent("hashchange")); 
+         window.dispatchEvent(new Event("hashchange")); 
      }); 
  } 
  function deleteDocument(id) { 
@@ -344,7 +344,7 @@
          showToast("KPI updated successfully"); 
      
   closeModal(); 
-         window.dispatchEvent(new HashChangeEvent("hashchange")); 
+         window.dispatchEvent(new Event("hashchange")); 
      }); 
  } 
  /* ============================================================ 
@@ -407,7 +407,7 @@
              showToast("Workflow run started"); 
          } 
          closeModal(); 
-         window.dispatchEvent(new HashChangeEvent("hashchange")); 
+         window.dispatchEvent(new Event("hashchange")); 
      }); 
  } 
  function deleteRun(id) { 
@@ -458,7 +458,7 @@
              showToast("Template added successfully"); 
          } 
          closeModal(); 
-         window.dispatchEvent(new HashChangeEvent("hashchange")); 
+         window.dispatchEvent(new Event("hashchange")); 
      }); 
  } 
  function deleteTemplate(id) { 
@@ -514,7 +514,7 @@
   showToast("Learning asset added successfully"); 
          } 
          closeModal(); 
-         window.dispatchEvent(new HashChangeEvent("hashchange")); 
+         window.dispatchEvent(new Event("hashchange")); 
      }); 
  } 
  function deleteLearningAsset(id) { 
@@ -564,7 +564,7 @@
              showToast("Role added successfully"); 
          } 
          closeModal(); 
-         window.dispatchEvent(new HashChangeEvent("hashchange")); 
+         window.dispatchEvent(new Event("hashchange")); 
      }); 
  } 
  function deleteRole(id) { 

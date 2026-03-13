@@ -779,6 +779,7 @@
              else if (q.includes("learning") || q.includes("educational")) wf = getById(D.workflows, "WF-006"); 
              else if (q.includes("quarterly") || q.includes("review")) wf = getById(D.workflows, "WF-007"); 
              else wf = D.workflows[0]; 
+             if (!wf) return emptyState("No workflows found."); 
              const stages = wf.stages.sort((a, b) => a.order - b.order); 
              const temps = (wf.outputTemplates || []).map(id => getById(D.templates, id)).filter(Boolean); 
              return `<div class="assistant-section"><h4><i data-lucide="git-branch" style="width:16px;height:16px"></i> Workflow: ${wf.name}</h4> 
