@@ -14,7 +14,7 @@ import cors from 'cors';
 import cron from 'node-cron';
 
 import { initializeAgents, getCoordinator, getAgent, getAgentManifest, suggestRoute } from './agents/index.js';
-import { queries, syncEntityCache, audit } from './db/index.js';
+import { queries, syncEntityCache, audit, getAgentMemory, setAgentMemory } from './db/index.js';
 
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -267,6 +267,118 @@ app.post('/api/agents/:agentName/run', async (req, res) => {
       messages: [{ role: 'user', content: message }]
     });
     res.json({ agent: agentName, response: result.response, toolsUsed: result.toolCalls?.map(t => t.tool) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Agent Memory ──────────────────────────────────────────────────────────────
+
+app.get('/api/agent-memory/:agentName', (req, res) => {
+  const memory = getAgentMemory(req.params.agentName);
+  res.json({ agentName: req.params.agentName, memory });
+});
+
+app.put('/api/agent-memory/:agentName', (req, res) => {
+  const { memoryType, content } = req.body;
+  if (!memoryType || content === undefined) return res.status(400).json({ error: 'memoryType and content required' });
+  setAgentMemory(req.params.agentName, memoryType, content);
+  res.json({ success: true });
+});
+
+// ── Learning Completions ───────────────────────────────────────────────────────
+
+app.get('/api/learning/completions', (req, res) => {
+  const { assetId, userId } = req.query;
+  if (assetId) {
+    return res.json({ completions: queries.getCompletionsByAsset.all(assetId) });
+  }
+  if (userId) {
+    return res.json({ completions: queries.getCompletionsByUser.all(userId) });
+  }
+  const completions = queries.getAllCompletions.all(200);
+  const summary = queries.getCompletionSummary.all();
+  res.json({ completions, summary });
+});
+
+app.post('/api/learning/completions', (req, res) => {
+  const { assetId, userId, userName, notes } = req.body;
+  if (!assetId || !userId) return res.status(400).json({ error: 'assetId and userId required' });
+  const id = crypto.randomUUID();
+  queries.addCompletion.run(id, assetId, userId, userName || userId, notes || null);
+  audit(null, 'learning_completion', 'learning', assetId, { userId, userName });
+  res.json({ id, success: true });
+});
+
+app.delete('/api/learning/completions/:id', (req, res) => {
+  queries.deleteCompletion.run(req.params.id);
+  res.json({ success: true });
+});
+
+// ── Document Versions ─────────────────────────────────────────────────────────
+
+app.get('/api/documents/:id/versions', (req, res) => {
+  const versions = queries.getDocumentVersions.all(req.params.id);
+  res.json({ documentId: req.params.id, versions });
+});
+
+app.get('/api/documents/:id/versions/:versionId', (req, res) => {
+  const version = queries.getDocumentVersion.get(req.params.versionId);
+  if (!version) return res.status(404).json({ error: 'Version not found' });
+  res.json({ ...version, content_snapshot: JSON.parse(version.content_snapshot) });
+});
+
+app.post('/api/documents/:id/versions', (req, res) => {
+  const { version, contentSnapshot, changedBy, changeNote } = req.body;
+  if (!version || !contentSnapshot) return res.status(400).json({ error: 'version and contentSnapshot required' });
+  const id = crypto.randomUUID();
+  queries.addDocumentVersion.run(id, req.params.id, version, JSON.stringify(contentSnapshot), changedBy || null, changeNote || null);
+  audit(null, 'document_version_saved', 'document', req.params.id, { version, changedBy });
+  res.json({ id, success: true });
+});
+
+// ── Report Generation ─────────────────────────────────────────────────────────
+
+app.post('/api/reports/generate', async (req, res) => {
+  const { period, audience = 'leadership', sessionId } = req.body;
+
+  const reportAgent = getAgent('metrics_intelligence');
+  if (!reportAgent) return res.status(503).json({ error: 'Metrics Intelligence agent not available' });
+
+  const prompt = `Generate a comprehensive ${audience}-level quarterly equity program report${period ? ` for ${period}` : ''}.
+
+Use generate_report_section to build each of these sections in order:
+1. metrics_performance — Full KPI performance narrative
+2. workflow_status — Active and completed workflows summary
+3. risk_actions — Risk registry and action item status
+4. learning_progress — Staff learning completion overview
+
+Then synthesize all sections into a cohesive, well-formatted markdown report with:
+- Executive summary paragraph
+- Each section with headers
+- Key findings and trends called out
+- Top 3 recommendations for the next period
+
+Format for ${audience} audience.`;
+
+  const onAgentActivity = (activity) => {
+    if (sessionId) broadcastToSession(sessionId, { type: 'agent_activity', ...activity });
+  };
+
+  try {
+    const result = await reportAgent.process({
+      messages: [{ role: 'user', content: prompt }],
+      onAgentActivity
+    });
+
+    if (sessionId) broadcastToSession(sessionId, { type: 'response_complete', agent: 'metrics_intelligence' });
+
+    res.json({
+      report: result.response,
+      period: period || `Q${Math.ceil((new Date().getMonth() + 1) / 3)} FY${new Date().getFullYear()}`,
+      audience,
+      generatedAt: new Date().toISOString()
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -53,7 +53,8 @@ export class LearningCuratorAgent {
     this.client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     this.tools = TOOL_DEFINITIONS.filter(t => [
       'get_learning_recommendations', 'get_metrics_summary', 'search_knowledge_base',
-      'get_roles_overview', 'store_insight', 'get_recent_insights'
+      'get_roles_overview', 'store_insight', 'get_recent_insights',
+      'read_agent_memory', 'write_agent_memory'
     ].includes(t.name));
   }
 

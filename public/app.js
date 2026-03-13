@@ -326,8 +326,45 @@
      const editBtn = $("#btn-edit-doc", el); 
      if (editBtn) editBtn.addEventListener("click", () => window.CRUD.openDocumentForm(d)); 
      const delBtn = $("#btn-del-doc", el); 
-     if (delBtn) delBtn.addEventListener("click", () => window.CRUD.deleteDocument(id)); 
- } 
+     if (delBtn) delBtn.addEventListener("click", () => window.CRUD.deleteDocument(id));
+     // Load document version history
+     const apiUrl = window.AGENT_API_URL || 'http://localhost:3000';
+     const versionCard = document.createElement('div');
+     versionCard.className = 'card';
+     versionCard.style.marginTop = 'var(--space-4)';
+     versionCard.innerHTML = '<h3 class="card__title">Version History</h3><div id="doc-versions"><p class="text-muted">Loading…</p></div><button class="btn btn--ghost btn--sm" id="btn-save-version" style="margin-top:var(--space-3)"><i data-lucide="save" style="width:14px;height:14px"></i> Save Current Version</button>';
+     const docMain = el.querySelector('.detail-main');
+     if (docMain) {
+         docMain.appendChild(versionCard);
+         if (typeof lucide !== "undefined") lucide.createIcons();
+         fetch(`${apiUrl}/api/documents/${encodeURIComponent(id)}/versions`).then(r => r.ok ? r.json() : null).then(data => {
+             const versDiv = document.getElementById('doc-versions');
+             if (!versDiv) return;
+             const versions = data?.versions || [];
+             versDiv.innerHTML = versions.length
+                 ? `<table class="data-table"><thead><tr><th>Version</th><th>Changed By</th><th>Note</th><th>Date</th></tr></thead><tbody>${versions.map(v => `<tr><td><strong>${v.version}</strong></td><td>${v.changed_by || '—'}</td><td>${v.change_note || '—'}</td><td>${new Date(v.created_at).toLocaleDateString()}</td></tr>`).join('')}</tbody></table>`
+                 : '<p class="text-muted">No versions saved yet. Click "Save Current Version" to capture the current state.</p>';
+         }).catch(() => {
+             const versDiv = document.getElementById('doc-versions');
+             if (versDiv) versDiv.innerHTML = '<p class="text-muted">Version history requires the backend.</p>';
+         });
+         const saveVerBtn = document.getElementById('btn-save-version');
+         if (saveVerBtn) saveVerBtn.addEventListener('click', async () => {
+             const doc = D.documents.find(d => d.id === id);
+             if (!doc) return;
+             const note = prompt('Enter a change note (optional):') || '';
+             const ver = prompt('Version label (e.g. 1.1):', '1.0') || '1.0';
+             try {
+                 await fetch(`${apiUrl}/api/documents/${encodeURIComponent(id)}/versions`, {
+                     method: 'POST', headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({ version: ver, contentSnapshot: doc, changedBy: 'Consultant', changeNote: note })
+                 });
+                 saveVerBtn.textContent = 'Saved!';
+                 setTimeout(() => { saveVerBtn.innerHTML = '<i data-lucide="save" style="width:14px;height:14px"></i> Save Current Version'; if (typeof lucide !== "undefined") lucide.createIcons(); }, 2000);
+             } catch (e) { alert('Could not save version. Backend required.'); }
+         });
+     }
+ }
  /* ── WORKFLOWS ──────────────────────────────────── */ 
  function renderWorkflows(el) { 
      const wfCards = D.workflows.map(w => { 
@@ -415,7 +452,7 @@
          <div class="detail-header"> 
              <h1 class="detail-title">${r.title}</h1> 
              <div class="detail-badges">${statusBadge(r.status)} ${priorityBadge(r.priority)}</div> 
-             <div class="detail-actions"><button class="btn btn--ghost btn--sm" id="btn-edit-run"><i data-lucide="pencil" style="width:14px;height:14px"></i> Edit</button><button class="btn btn--ghost btn--sm btn--delete" id="btn-del-run"><i data-lucide="trash-2" style="width:14px;height:14px"></i> Delete</button></div> 
+             <div class="detail-actions"><button class="btn btn--ghost btn--sm" id="btn-edit-run"><i data-lucide="pencil" style="width:14px;height:14px"></i> Edit</button><button class="btn btn--ghost btn--sm btn--delete" id="btn-del-run"><i data-lucide="trash-2" style="width:14px;height:14px"></i> Delete</button>${r.status !== "Completed" && r.status !== "Cancelled" ? '<button class="btn btn--primary btn--sm" id="btn-advance-stage"><i data-lucide="chevron-right" style="width:14px;height:14px"></i> Advance Stage</button>' : ''}</div> 
          </div> 
          ${progressHTML} 
          <div class="detail-grid" style="margin-top:var(--space-6)"> 
@@ -442,10 +479,25 @@
              </div> 
          </div> 
      </div>`; 
-     const editRunBtn = $("#btn-edit-run", el); 
-     if (editRunBtn) editRunBtn.addEventListener("click", () => window.CRUD.openRunForm(r, r.workflowId)); 
-     const delRunBtn = $("#btn-del-run", el); 
-     if (delRunBtn) delRunBtn.addEventListener("click", () => window.CRUD.deleteRun(id)); 
+     const editRunBtn = $("#btn-edit-run", el);
+     if (editRunBtn) editRunBtn.addEventListener("click", () => window.CRUD.openRunForm(r, r.workflowId));
+     const delRunBtn = $("#btn-del-run", el);
+     if (delRunBtn) delRunBtn.addEventListener("click", () => window.CRUD.deleteRun(id));
+     const advanceBtn = $("#btn-advance-stage", el);
+     if (advanceBtn) advanceBtn.addEventListener("click", async () => {
+         if (!window.AGENT || !window.AGENT.submitMessage) {
+             alert('AI Agent Team is required to advance stages. Please ensure the backend is running and navigate to AI Agent Team first.');
+             return;
+         }
+         const currentStage = r.currentStage || 'current stage';
+         const wfTitle = w ? w.name : 'workflow';
+         if (!confirm(`Ask the Workflow Architect to advance "${r.title}" from "${currentStage}" to the next stage?`)) return;
+         location.hash = 'assistant';
+         setTimeout(() => {
+             const msg = `Please advance workflow run "${r.title}" (${r.id}) from "${currentStage}" to the next stage. The workflow is "${wfTitle}". Confirm the stage was completed and advance it.`;
+             if (window.AGENT && window.AGENT.submitMessage) window.AGENT.submitMessage(msg);
+         }, 500);
+     });
  } 
  /* ── TEMPLATES ──────────────────────────────────── */ 
  function renderTemplates(el) { 
@@ -549,8 +601,19 @@
          <div class="reporting-banner"> 
              <i data-lucide="calendar" style="width:16px;height:16px"></i> 
              <span>Reporting Period: <strong>${rp ? rp.name : "—"}</strong></span> 
-             <span class="text-muted">${rp ? formatDate(rp.startDate) + " — " + formatDate(rp.endDate) : ""}</span> 
-         </div> 
+             <span class="text-muted">${rp ? formatDate(rp.startDate) + " — " + formatDate(rp.endDate) : ""}</span>
+             <button class="btn btn--primary btn--sm" id="btn-gen-report" style="margin-left:auto"><i data-lucide="file-text" style="width:14px;height:14px"></i> Generate Report</button>
+         </div>
+         <div id="report-output" style="display:none;margin-bottom:var(--space-6)" class="card">
+             <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-4) var(--space-4) 0">
+                 <h3 style="margin:0;font-size:var(--text-base);font-weight:600">Generated Report</h3>
+                 <div style="display:flex;gap:var(--space-2)">
+                     <button class="btn btn--ghost btn--sm" id="btn-copy-report"><i data-lucide="copy" style="width:14px;height:14px"></i> Copy</button>
+                     <button class="btn btn--ghost btn--sm" id="btn-close-report"><i data-lucide="x" style="width:14px;height:14px"></i> Close</button>
+                 </div>
+             </div>
+             <div id="report-content" style="padding:var(--space-4);max-height:600px;overflow-y:auto;white-space:pre-wrap;font-family:inherit;line-height:1.7;font-size:var(--text-sm)"></div>
+         </div>
          <div class="tabs" id="metrics-tabs"> 
              <button class="tab active" data-tab="operations">Operations Dashboard</button> 
              <button class="tab" data-tab="leadership">Leadership Dashboard</button> 
@@ -580,13 +643,55 @@
              if (panel) { panel.style.display = "block"; panel.classList.add("active"); } 
          }); 
      }); 
-     $$(".kpi-edit-btn", el).forEach(btn => { 
-         btn.addEventListener("click", (e) => { 
-             e.stopPropagation(); 
-             const kpi = getById(D.kpis, btn.dataset.kpiId); 
-             if (kpi) window.CRUD.openKPIForm(kpi); 
-         }); 
-     }); 
+     $$(".kpi-edit-btn", el).forEach(btn => {
+         btn.addEventListener("click", (e) => {
+             e.stopPropagation();
+             const kpi = getById(D.kpis, btn.dataset.kpiId);
+             if (kpi) window.CRUD.openKPIForm(kpi);
+         });
+     });
+     // Generate Report button
+     const genReportBtn = $("#btn-gen-report", el);
+     if (genReportBtn) {
+         genReportBtn.addEventListener("click", async () => {
+             const apiUrl = window.AGENT_API_URL || 'http://localhost:3000';
+             const output = $("#report-output", el);
+             const content = $("#report-content", el);
+             if (!output || !content) return;
+             genReportBtn.disabled = true;
+             genReportBtn.innerHTML = '<i data-lucide="loader" style="width:14px;height:14px"></i> Generating…';
+             if (typeof lucide !== "undefined") lucide.createIcons();
+             output.style.display = "block";
+             content.textContent = "Generating report… This may take 30-60 seconds.";
+             try {
+                 const res = await fetch(`${apiUrl}/api/reports/generate`, {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({ period: rp ? rp.name : null, audience: 'leadership' })
+                 });
+                 const data = await res.json();
+                 content.textContent = data.report || data.error || 'No report generated';
+             } catch (e) {
+                 content.textContent = 'Error: ' + e.message + '\n\nMake sure the backend is running (see DEPLOY.md).';
+             } finally {
+                 genReportBtn.disabled = false;
+                 genReportBtn.innerHTML = '<i data-lucide="file-text" style="width:14px;height:14px"></i> Generate Report';
+                 if (typeof lucide !== "undefined") lucide.createIcons();
+             }
+         });
+     }
+     const copyReportBtn = $("#btn-copy-report", el);
+     if (copyReportBtn) copyReportBtn.addEventListener("click", () => {
+         const c = $("#report-content", el);
+         if (c) navigator.clipboard.writeText(c.textContent).then(() => {
+             copyReportBtn.textContent = "Copied!";
+             setTimeout(() => { copyReportBtn.innerHTML = '<i data-lucide="copy" style="width:14px;height:14px"></i> Copy'; if (typeof lucide !== "undefined") lucide.createIcons(); }, 1500);
+         });
+     });
+     const closeReportBtn = $("#btn-close-report", el);
+     if (closeReportBtn) closeReportBtn.addEventListener("click", () => {
+         const o = $("#report-output", el); if (o) o.style.display = "none";
+     });
  } 
  /* ── LEARNING ───────────────────────────────────── */ 
  function renderLearning(el) { 
@@ -667,16 +772,59 @@
                  <div class="card"><h3 class="card__title">Linked Workflows</h3> 
                      ${(a.linkedWorkflows || []).length ? `<ul class="link-list">${a.linkedWorkflows.map(id => `<li>${wfLink(id)}</li>`).join("")}</ul>` : "<p class='text-muted'>None</p>"} 
                  </div> 
-                 <div class="card"><h3 class="card__title">Linked Templates</h3> 
-                     ${(a.linkedTemplates || []).length ? `<ul class="link-list">${a.linkedTemplates.map(id => `<li>${tmpLink(id)}</li>`).join("")}</ul>` : "<p class='text-muted'>None</p>"} 
-                 </div> 
-             </div> 
-         </div> 
-     </div>`; 
-     const editLaBtn = $("#btn-edit-la", el); 
-     if (editLaBtn) editLaBtn.addEventListener("click", () => window.CRUD.openLearningForm(a)); 
-     const delLaBtn = $("#btn-del-la", el); 
-     if (delLaBtn) delLaBtn.addEventListener("click", () => window.CRUD.deleteLearningAsset(id)); 
+                 <div class="card"><h3 class="card__title">Linked Templates</h3>
+                     ${(a.linkedTemplates || []).length ? `<ul class="link-list">${a.linkedTemplates.map(id => `<li>${tmpLink(id)}</li>`).join("")}</ul>` : "<p class='text-muted'>None</p>"}
+                 </div>
+                 <div class="card" id="completion-card">
+                     <h3 class="card__title">Completion Tracking</h3>
+                     <div id="completion-list"><p class="text-muted">Loading completions…</p></div>
+                     <button class="btn btn--primary btn--sm" id="btn-mark-complete" style="margin-top:var(--space-3)"><i data-lucide="check-circle-2" style="width:14px;height:14px"></i> Mark as Complete</button>
+                 </div>
+             </div>
+         </div>
+     </div>`;
+     const editLaBtn = $("#btn-edit-la", el);
+     if (editLaBtn) editLaBtn.addEventListener("click", () => window.CRUD.openLearningForm(a));
+     const delLaBtn = $("#btn-del-la", el);
+     if (delLaBtn) delLaBtn.addEventListener("click", () => window.CRUD.deleteLearningAsset(id));
+     // Load completion records
+     const apiUrl = window.AGENT_API_URL || 'http://localhost:3000';
+     const compList = $("#completion-list", el);
+     async function loadCompletions() {
+         if (!compList) return;
+         try {
+             const res = await fetch(`${apiUrl}/api/learning/completions?assetId=${encodeURIComponent(id)}`);
+             if (!res.ok) throw new Error('Backend unavailable');
+             const data = await res.json();
+             const comps = data.completions || [];
+             compList.innerHTML = comps.length
+                 ? `<p class="text-muted" style="margin-bottom:var(--space-2)">${comps.length} completion${comps.length > 1 ? 's' : ''} recorded</p><ul style="list-style:none;padding:0;margin:0">${comps.map(c => `<li style="display:flex;justify-content:space-between;padding:var(--space-1) 0;border-bottom:1px solid var(--color-border);font-size:var(--text-sm)"><span>${c.user_name || c.user_id}</span><span class="text-muted">${new Date(c.completed_at).toLocaleDateString()}</span></li>`).join('')}</ul>`
+                 : '<p class="text-muted">No completions recorded yet.</p>';
+         } catch (e) {
+             compList.innerHTML = '<p class="text-muted">Completion tracking requires the backend.</p>';
+         }
+     }
+     loadCompletions();
+     const markCompleteBtn = $("#btn-mark-complete", el);
+     if (markCompleteBtn) markCompleteBtn.addEventListener("click", async () => {
+         const user = window.AUTH?.getUser?.();
+         const userId = user?.username || user?.email || 'consultant';
+         const userName = user?.name || userId;
+         try {
+             const res = await fetch(`${apiUrl}/api/learning/completions`, {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ assetId: id, userId, userName })
+             });
+             if (!res.ok) throw new Error('Failed');
+             markCompleteBtn.innerHTML = '<i data-lucide="check" style="width:14px;height:14px"></i> Marked Complete!';
+             markCompleteBtn.disabled = true;
+             if (typeof lucide !== "undefined") lucide.createIcons();
+             await loadCompletions();
+         } catch (e) {
+             alert('Could not record completion. Make sure the backend is running.');
+         }
+     });
  } 
  /* ── ASSISTANT ──────────────────────────────────── */ 
  function renderAssistant(el) { 

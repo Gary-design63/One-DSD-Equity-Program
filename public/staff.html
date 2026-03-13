@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>One DSD Equity — Staff Portal</title>
+  <meta name="description" content="Equity and inclusion support portal for DSD staff members.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="base.css">
+  <link rel="stylesheet" href="staff.css">
+</head>
+<body>
+  <header class="staff-header">
+    <div class="staff-header__inner">
+      <div class="staff-header__brand">
+        <svg width="28" height="28" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+          <rect width="32" height="32" rx="8" fill="currentColor" opacity="0.2"/>
+          <path d="M8 16a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4h4v8H8V16z" fill="currentColor"/>
+          <circle cx="20" cy="12" r="4" fill="currentColor"/>
+          <rect x="18" y="18" width="8" height="4" rx="2" fill="currentColor" opacity="0.7"/>
+        </svg>
+        <div>
+          <span class="staff-header__title">One DSD Equity</span>
+          <span class="staff-header__subtitle">Staff Support Portal</span>
+        </div>
+      </div>
+      <div class="staff-header__right">
+        <span class="staff-status" id="staff-status">
+          <span class="staff-status__dot"></span>
+          <span id="staff-status-text">Connecting…</span>
+        </span>
+        <button class="staff-header__theme" id="theme-toggle" aria-label="Toggle dark mode">
+          <i data-lucide="moon" style="width:18px;height:18px"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="staff-main">
+    <!-- Welcome Banner -->
+    <section class="staff-welcome" id="staff-welcome">
+      <div class="staff-welcome__icon">🧭</div>
+      <h1 class="staff-welcome__title">How can I help you today?</h1>
+      <p class="staff-welcome__subtitle">I'm your Equity and Inclusion assistant for the Disability Services Division. Ask me about equity policies, your rights, accessibility resources, training, or how to navigate an equity concern.</p>
+      <p class="staff-welcome__note">All conversations are private. I can't see your identity unless you choose to share it.</p>
+    </section>
+
+    <!-- Quick Topic Buttons -->
+    <section class="staff-topics" id="staff-topics">
+      <button class="staff-topic-btn" data-prompt="What are my rights as a DSD staff member related to disability accommodation and accessibility in the workplace?">
+        <span class="staff-topic-btn__icon">⚖️</span>
+        <span class="staff-topic-btn__label">My Rights &amp; Accommodations</span>
+      </button>
+      <button class="staff-topic-btn" data-prompt="What equity and inclusion training is available for DSD staff? What's required and what's optional?">
+        <span class="staff-topic-btn__icon">📚</span>
+        <span class="staff-topic-btn__label">Training &amp; Learning</span>
+      </button>
+      <button class="staff-topic-btn" data-prompt="I want to raise an equity concern or report a potential bias issue. What's the process and who do I contact?">
+        <span class="staff-topic-btn__icon">🔔</span>
+        <span class="staff-topic-btn__label">Raise a Concern</span>
+      </button>
+      <button class="staff-topic-btn" data-prompt="What accessibility resources and supports are available for DSD staff and the people we serve?">
+        <span class="staff-topic-btn__icon">♿</span>
+        <span class="staff-topic-btn__label">Accessibility Resources</span>
+      </button>
+      <button class="staff-topic-btn" data-prompt="What equity policies govern our work at DSD? What frameworks guide how we approach equity in service delivery?">
+        <span class="staff-topic-btn__icon">📋</span>
+        <span class="staff-topic-btn__label">Equity Policies</span>
+      </button>
+      <button class="staff-topic-btn" data-prompt="How can I support a community member or client who has experienced inequitable treatment? What resources exist for the people we serve?">
+        <span class="staff-topic-btn__icon">🤝</span>
+        <span class="staff-topic-btn__label">Supporting People We Serve</span>
+      </button>
+    </section>
+
+    <!-- Chat Container -->
+    <section class="staff-chat-container" id="staff-chat-container">
+      <div class="staff-chat" id="staff-chat" aria-live="polite" aria-label="Conversation"></div>
+
+      <!-- Typing indicator -->
+      <div class="staff-typing" id="staff-typing" style="display:none">
+        <div class="staff-typing__avatar">🧭</div>
+        <div class="staff-typing__dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Input Area -->
+    <div class="staff-input-area" id="staff-input-area">
+      <div class="staff-input-wrap">
+        <textarea
+          class="staff-input"
+          id="staff-input"
+          placeholder="Ask about equity policies, training, accommodations, or concerns…"
+          rows="1"
+          aria-label="Message input"
+        ></textarea>
+        <button class="staff-send-btn" id="staff-send-btn" aria-label="Send message" disabled>
+          <i data-lucide="send" style="width:18px;height:18px"></i>
+        </button>
+      </div>
+      <div class="staff-input-footer">
+        <span>Press <kbd>Enter</kbd> to send · <kbd>Shift+Enter</kbd> for new line</span>
+        <button class="staff-new-chat" id="staff-new-chat">
+          <i data-lucide="plus-circle" style="width:14px;height:14px"></i> New conversation
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <!-- Set this to your VPS backend URL when deployed -->
+  <!-- <script>window.STAFF_API_URL = 'https://your-vps-ip:3000';</script> -->
+  <script src="data.js"></script>
+  <script src="staff.js"></script>
+</body>
+</html>

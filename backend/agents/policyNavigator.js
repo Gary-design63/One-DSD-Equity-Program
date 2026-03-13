@@ -45,7 +45,8 @@ export class PolicyNavigatorAgent {
     this.model = process.env.AGENT_MODEL || 'claude-sonnet-4-6';
     this.client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     this.tools = TOOL_DEFINITIONS.filter(t => [
-      'search_knowledge_base', 'cross_reference_entities', 'store_insight', 'get_recent_insights'
+      'search_knowledge_base', 'cross_reference_entities', 'store_insight', 'get_recent_insights',
+      'read_agent_memory', 'write_agent_memory'
     ].includes(t.name));
   }
 

@@ -47,7 +47,8 @@ export class MetricsIntelligenceAgent {
     this.client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     this.tools = TOOL_DEFINITIONS.filter(t => [
       'get_metrics_summary', 'get_active_workflows', 'get_actions_status',
-      'get_risks_summary', 'store_insight', 'get_recent_insights'
+      'get_risks_summary', 'store_insight', 'get_recent_insights',
+      'read_agent_memory', 'write_agent_memory', 'generate_report_section'
     ].includes(t.name));
   }
 

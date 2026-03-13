@@ -64,7 +64,8 @@ export class RiskActionMonitorAgent {
     this.client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     this.tools = TOOL_DEFINITIONS.filter(t => [
       'get_risks_summary', 'get_actions_status', 'get_metrics_summary',
-      'get_active_workflows', 'store_insight', 'get_recent_insights'
+      'get_active_workflows', 'store_insight', 'get_recent_insights',
+      'read_agent_memory', 'write_agent_memory'
     ].includes(t.name));
   }
 

@@ -64,7 +64,8 @@ export class CommunityIntelligenceAgent {
     this.client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     this.tools = TOOL_DEFINITIONS.filter(t => [
       'search_knowledge_base', 'get_roles_overview', 'get_learning_recommendations',
-      'store_insight', 'get_recent_insights', 'cross_reference_entities'
+      'store_insight', 'get_recent_insights', 'cross_reference_entities',
+      'read_agent_memory', 'write_agent_memory'
     ].includes(t.name));
   }
 

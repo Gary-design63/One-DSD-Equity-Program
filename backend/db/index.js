@@ -109,12 +109,45 @@ db.exec(`
     resolved_at     TEXT
   );
 
+  -- Per-agent long-term memory (persists across conversations)
+  CREATE TABLE IF NOT EXISTS agent_memory (
+    agent_name    TEXT NOT NULL,
+    memory_type   TEXT NOT NULL,  -- 'program_context','preferences','patterns','key_facts'
+    content       TEXT NOT NULL,  -- Free-form text or JSON
+    updated_at    TEXT DEFAULT (datetime('now')),
+    PRIMARY KEY (agent_name, memory_type)
+  );
+
+  -- Staff learning completion records
+  CREATE TABLE IF NOT EXISTS learning_completions (
+    id            TEXT PRIMARY KEY,
+    asset_id      TEXT NOT NULL,
+    user_id       TEXT NOT NULL,
+    user_name     TEXT,
+    completed_at  TEXT DEFAULT (datetime('now')),
+    notes         TEXT
+  );
+
+  -- Document version history
+  CREATE TABLE IF NOT EXISTS document_versions (
+    id              TEXT PRIMARY KEY,
+    document_id     TEXT NOT NULL,
+    version         TEXT NOT NULL,
+    content_snapshot TEXT NOT NULL,  -- Full JSON snapshot of the document at this version
+    changed_by      TEXT,
+    change_note     TEXT,
+    created_at      TEXT DEFAULT (datetime('now'))
+  );
+
   -- Indexes for common query patterns
   CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, created_at);
   CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status, scheduled_for);
   CREATE INDEX IF NOT EXISTS idx_insights_type ON insights(insight_type, is_active);
   CREATE INDEX IF NOT EXISTS idx_audit_agent ON audit_log(agent_name, created_at);
   CREATE INDEX IF NOT EXISTS idx_entity_cache_type ON entity_cache(entity_type);
+  CREATE INDEX IF NOT EXISTS idx_completions_asset ON learning_completions(asset_id);
+  CREATE INDEX IF NOT EXISTS idx_completions_user ON learning_completions(user_id);
+  CREATE INDEX IF NOT EXISTS idx_doc_versions ON document_versions(document_id, created_at);
 `);
 
 // ── Query Helpers ───────────────────────────────────────────────────────────
@@ -226,6 +259,44 @@ export const queries = {
   `),
   getPendingDelegations: db.prepare(`
     SELECT * FROM delegations WHERE status = 'pending' ORDER BY created_at ASC
+  `),
+
+  // Agent memory
+  getAgentMemory: db.prepare(`SELECT * FROM agent_memory WHERE agent_name = ?`),
+  getMemoryEntry: db.prepare(`SELECT * FROM agent_memory WHERE agent_name = ? AND memory_type = ?`),
+  upsertMemory: db.prepare(`
+    INSERT INTO agent_memory (agent_name, memory_type, content, updated_at)
+    VALUES (?, ?, ?, datetime('now'))
+    ON CONFLICT(agent_name, memory_type) DO UPDATE SET content = excluded.content, updated_at = excluded.updated_at
+  `),
+  deleteMemoryEntry: db.prepare(`DELETE FROM agent_memory WHERE agent_name = ? AND memory_type = ?`),
+
+  // Learning completions
+  addCompletion: db.prepare(`
+    INSERT INTO learning_completions (id, asset_id, user_id, user_name, notes)
+    VALUES (?, ?, ?, ?, ?)
+  `),
+  getCompletionsByAsset: db.prepare(`SELECT * FROM learning_completions WHERE asset_id = ? ORDER BY completed_at DESC`),
+  getCompletionsByUser: db.prepare(`SELECT * FROM learning_completions WHERE user_id = ? ORDER BY completed_at DESC`),
+  getAllCompletions: db.prepare(`SELECT * FROM learning_completions ORDER BY completed_at DESC LIMIT ?`),
+  deleteCompletion: db.prepare(`DELETE FROM learning_completions WHERE id = ?`),
+  getCompletionSummary: db.prepare(`
+    SELECT asset_id, COUNT(*) as completion_count, MAX(completed_at) as last_completed
+    FROM learning_completions GROUP BY asset_id
+  `),
+
+  // Document versions
+  addDocumentVersion: db.prepare(`
+    INSERT INTO document_versions (id, document_id, version, content_snapshot, changed_by, change_note)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `),
+  getDocumentVersions: db.prepare(`
+    SELECT id, document_id, version, changed_by, change_note, created_at
+    FROM document_versions WHERE document_id = ? ORDER BY created_at DESC
+  `),
+  getDocumentVersion: db.prepare(`SELECT * FROM document_versions WHERE id = ?`),
+  getLatestVersion: db.prepare(`
+    SELECT * FROM document_versions WHERE document_id = ? ORDER BY created_at DESC LIMIT 1
   `)
 };
 
@@ -278,6 +349,18 @@ export function searchEntityCache(entityType, searchTerm) {
 export function getAllEntities(entityType) {
   const rows = queries.getEntitiesByType.all(entityType);
   return rows.map(r => JSON.parse(r.data));
+}
+
+export function getAgentMemory(agentName) {
+  const rows = queries.getAgentMemory.all(agentName);
+  return rows.reduce((acc, row) => {
+    acc[row.memory_type] = row.content;
+    return acc;
+  }, {});
+}
+
+export function setAgentMemory(agentName, memoryType, content) {
+  queries.upsertMemory.run(agentName, memoryType, typeof content === 'string' ? content : JSON.stringify(content));
 }
 
 export default db;

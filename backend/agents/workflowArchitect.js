@@ -50,7 +50,8 @@ export class WorkflowArchitectAgent {
     this.client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     this.tools = TOOL_DEFINITIONS.filter(t => [
       'get_workflow_guidance', 'get_active_workflows', 'search_knowledge_base',
-      'get_actions_status', 'store_insight', 'cross_reference_entities'
+      'get_actions_status', 'store_insight', 'cross_reference_entities',
+      'read_agent_memory', 'write_agent_memory', 'advance_workflow_stage'
     ].includes(t.name));
   }
 

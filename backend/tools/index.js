@@ -4,7 +4,7 @@
  * Each tool returns structured JSON the agent can reason about.
  */
 
-import { getAllEntities, searchEntityCache, queries, audit } from '../db/index.js';
+import { getAllEntities, searchEntityCache, queries, audit, getAgentMemory, setAgentMemory } from '../db/index.js';
 
 // ── Tool Definitions (for Anthropic tool_use) ────────────────────────────────
 
@@ -180,6 +180,71 @@ export const TOOL_DEFINITIONS = [
       },
       required: ['entity_type', 'entity_id']
     }
+  },
+  {
+    name: 'read_agent_memory',
+    description: 'Read your long-term memory to recall program context, consultant preferences, recurring patterns, and key facts you have accumulated across past sessions. Call this at the start of complex requests.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        memory_type: {
+          type: 'string',
+          enum: ['program_context', 'preferences', 'patterns', 'key_facts', 'all'],
+          description: 'Which memory category to retrieve. Use "all" to get everything.'
+        }
+      },
+      required: ['memory_type']
+    }
+  },
+  {
+    name: 'write_agent_memory',
+    description: 'Store something important in your long-term memory for future sessions. Use this to remember consultant preferences, patterns you have identified, key facts about the program, or context that will be useful later.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        memory_type: {
+          type: 'string',
+          enum: ['program_context', 'preferences', 'patterns', 'key_facts'],
+          description: 'Category for this memory'
+        },
+        content: { type: 'string', description: 'What to remember. This REPLACES the current memory for this type — include all important items, not just the new one.' }
+      },
+      required: ['memory_type', 'content']
+    }
+  },
+  {
+    name: 'advance_workflow_stage',
+    description: 'Advance a workflow run to the next stage or a specified stage. Use this when the consultant confirms stage completion and wants to move forward. Records the advancement with justification.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        run_id: { type: 'string', description: 'The workflow run ID to advance' },
+        justification: { type: 'string', description: 'Brief explanation of why this stage is complete and what was accomplished' },
+        next_stage: { type: 'string', description: 'Explicit next stage name to advance to. If omitted, advances to the next sequential stage.' }
+      },
+      required: ['run_id', 'justification']
+    }
+  },
+  {
+    name: 'generate_report_section',
+    description: 'Generate a formatted report section using current program data. Use this to build quarterly reports, executive summaries, or accountability reports.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        section_type: {
+          type: 'string',
+          enum: ['executive_summary', 'metrics_performance', 'workflow_status', 'risk_actions', 'learning_progress', 'recommendations'],
+          description: 'Which report section to generate'
+        },
+        period: { type: 'string', description: 'Reporting period (e.g. "Q1 FY2026"). Optional.' },
+        audience: {
+          type: 'string',
+          enum: ['leadership', 'consultant', 'staff'],
+          description: 'Intended audience — adjusts tone and detail level'
+        }
+      },
+      required: ['section_type', 'audience']
+    }
   }
 ];
 
@@ -200,6 +265,10 @@ export async function executeTool(toolName, toolInput, agentName) {
       case 'get_recent_insights':          return getRecentInsights(toolInput, agentName);
       case 'delegate_task':                return { delegated: true, to_agent: toolInput.to_agent, task: toolInput.task_summary };
       case 'cross_reference_entities':     return crossReferenceEntities(toolInput, agentName);
+      case 'read_agent_memory':            return readAgentMemory(toolInput, agentName);
+      case 'write_agent_memory':           return writeAgentMemory(toolInput, agentName);
+      case 'advance_workflow_stage':       return advanceWorkflowStage(toolInput, agentName);
+      case 'generate_report_section':      return generateReportSection(toolInput, agentName);
       default:
         return { error: `Unknown tool: ${toolName}` };
     }
@@ -512,6 +581,169 @@ function getRecentInsights({ insight_type, limit = 10 }, agentName) {
       ...i,
       related_entities: JSON.parse(i.related_entities || '[]')
     }))
+  };
+}
+
+function readAgentMemory({ memory_type }, agentName) {
+  if (memory_type === 'all') {
+    const memory = getAgentMemory(agentName);
+    return {
+      agent: agentName,
+      memory,
+      has_memory: Object.keys(memory).length > 0,
+      types_stored: Object.keys(memory)
+    };
+  }
+
+  const row = queries.getMemoryEntry.get(agentName, memory_type);
+  return {
+    agent: agentName,
+    memory_type,
+    content: row ? row.content : null,
+    updated_at: row ? row.updated_at : null,
+    found: !!row
+  };
+}
+
+function writeAgentMemory({ memory_type, content }, agentName) {
+  setAgentMemory(agentName, memory_type, content);
+  audit(agentName, 'write_memory', 'agent_memory', agentName, { memory_type, length: content.length });
+  return {
+    success: true,
+    message: `Memory updated for ${agentName} [${memory_type}]`,
+    memory_type,
+    content_length: content.length
+  };
+}
+
+function advanceWorkflowStage({ run_id, justification, next_stage }, agentName) {
+  const workflowRuns = getAllEntities('workflowRun');
+  const run = workflowRuns.find(r => r.id === run_id);
+
+  if (!run) {
+    return { error: `Workflow run not found: ${run_id}` };
+  }
+
+  const workflowDefs = getAllEntities('workflow');
+  const def = workflowDefs.find(w => w.id === run.workflowId);
+  const stages = def?.stages || [];
+
+  const currentIndex = stages.findIndex(s =>
+    s.name && s.name.toLowerCase() === (run.currentStage || '').toLowerCase()
+  );
+
+  let targetStage;
+  if (next_stage) {
+    targetStage = stages.find(s => s.name && s.name.toLowerCase().includes(next_stage.toLowerCase()));
+    if (!targetStage) {
+      return { error: `Stage not found: ${next_stage}`, available_stages: stages.map(s => s.name) };
+    }
+  } else {
+    if (currentIndex < 0 || currentIndex >= stages.length - 1) {
+      return {
+        error: currentIndex >= stages.length - 1
+          ? `Run "${run.title}" is already at the final stage`
+          : `Cannot determine current stage position for "${run.currentStage}"`
+      };
+    }
+    targetStage = stages[currentIndex + 1];
+  }
+
+  // Record the advancement in audit log
+  audit(agentName, 'advance_workflow_stage', 'workflowRun', run_id, {
+    from_stage: run.currentStage,
+    to_stage: targetStage.name,
+    justification
+  });
+
+  return {
+    success: true,
+    run_id,
+    run_title: run.title,
+    advanced_from: run.currentStage,
+    advanced_to: targetStage.name,
+    justification,
+    stage_details: targetStage,
+    next_deliverables: targetStage.deliverables || [],
+    message: `✓ Workflow run "${run.title}" advanced from "${run.currentStage}" to "${targetStage.name}". Note: update the run's currentStage field in the program interface to reflect this change.`
+  };
+}
+
+function generateReportSection({ section_type, period, audience }, agentName) {
+  const kpis = getAllEntities('kpi');
+  const actions = getAllEntities('action');
+  const risks = getAllEntities('risk');
+  const workflowRuns = getAllEntities('workflowRun');
+  const learningAssets = getAllEntities('learning');
+  const now = new Date();
+  const reportPeriod = period || `Q${Math.ceil((now.getMonth() + 1) / 3)} FY${now.getFullYear()}`;
+
+  let data = {};
+
+  switch (section_type) {
+    case 'metrics_performance': {
+      const enriched = kpis.map(k => {
+        const current = parseFloat(k.currentValue);
+        const target = parseFloat(k.target);
+        const pct = (!isNaN(current) && !isNaN(target) && target > 0) ? Math.round((current / target) * 100) : null;
+        return { ...k, achievement_pct: pct };
+      });
+      data = {
+        total_kpis: enriched.length,
+        on_target: enriched.filter(k => k.achievement_pct >= 100).length,
+        below_target: enriched.filter(k => k.achievement_pct !== null && k.achievement_pct < 100).length,
+        trending_up: enriched.filter(k => k.trend === 'up').length,
+        by_group: [...new Set(kpis.map(k => k.group).filter(Boolean))].map(g => ({
+          group: g,
+          kpis: enriched.filter(k => k.group === g).map(k => ({
+            name: k.name, current: k.currentValue, target: k.target,
+            achievement: k.achievement_pct, trend: k.trend, unit: k.unit
+          }))
+        }))
+      };
+      break;
+    }
+    case 'workflow_status': {
+      const active = workflowRuns.filter(r => !['Completed', 'Cancelled'].includes(r.status));
+      const completed = workflowRuns.filter(r => r.status === 'Completed');
+      data = { total_runs: workflowRuns.length, active_count: active.length, completed_count: completed.length, active_runs: active };
+      break;
+    }
+    case 'risk_actions': {
+      const overdueActions = actions.filter(a => a.dueDate && new Date(a.dueDate) < now && a.status !== 'Completed');
+      const criticalRisks = risks.filter(r => r.severity === 'Critical' || r.severity === 'High');
+      data = {
+        total_actions: actions.length,
+        overdue_count: overdueActions.length,
+        overdue_actions: overdueActions,
+        total_risks: risks.length,
+        critical_risk_count: criticalRisks.length,
+        critical_risks: criticalRisks
+      };
+      break;
+    }
+    case 'learning_progress': {
+      const completionSummary = queries.getCompletionSummary.all();
+      data = {
+        total_assets: learningAssets.length,
+        required_assets: learningAssets.filter(a => a.required === true || a.required === 'Yes').length,
+        completions_recorded: completionSummary.reduce((sum, r) => sum + r.completion_count, 0),
+        assets_with_completions: completionSummary.length
+      };
+      break;
+    }
+    default:
+      data = { note: 'Use metrics, workflow, risk/action, and learning sections to assemble full report' };
+  }
+
+  audit(agentName, 'generate_report_section', null, null, { section_type, period: reportPeriod, audience });
+
+  return {
+    section_type,
+    period: reportPeriod,
+    audience,
+    generated_at: now.toISOString(),
+    data
   };
 }
 
