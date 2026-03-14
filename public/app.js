@@ -84,7 +84,8 @@
  const pageNames = { 
      dashboard: "Dashboard", "knowledge-base": "Knowledge Base", workflows: "Workflows", 
      templates: "Templates", metrics: "Metrics & Reporting", learning: "Learning Portal", 
-     assistant: "Assistant", roles: "Roles & Governance", actions: "Actions", risks: "Risks" 
+     assistant: "Assistant", roles: "Roles & Governance", actions: "Actions", risks: "Risks",
+     cowork: "Claude Cowork" 
  }; 
  function route() { 
      const hash = location.hash.slice(1) || "dashboard"; 
@@ -125,6 +126,7 @@
          else if (page === "roles") { renderRoles(el); titleEl().textContent = "Roles & Governance"; } 
          else if (page === "actions") { renderActions(el); titleEl().textContent = "Actions"; } 
          else if (page === "risks") { renderRisks(el); titleEl().textContent = "Risks"; } 
+         else if (page === "cowork") { renderCowork(el); titleEl().textContent = "Claude Cowork"; } 
          else { renderDashboard(el); titleEl().textContent = "Dashboard"; } 
      } catch (e) { console.error("Render error:", e); el.innerHTML = `<div class="empty-state"><p>Error loading page: ${e.message}</p></div>`; } 
      if (typeof lucide !== "undefined") lucide.createIcons(); 
@@ -952,6 +954,64 @@
      $$(".risk-del", el).forEach(btn => btn.addEventListener("click", () => window.CRUD.deleteRisk(btn.dataset.id))); 
      if (typeof lucide !== "undefined") lucide.createIcons(); 
  } 
+/* ── CLAUDE COWORK ──────────────────────────────── */ 
+function renderCowork(el) { 
+    el.innerHTML = `<div class="page-content"> 
+        ${sectionTitle("Claude Cowork", "users-2")} 
+        <p class="text-muted" style="margin-bottom:var(--space-6)">A shared collaboration space for the One DSD Equity Program team powered by Claude.</p> 
+        <div class="card-grid card-grid--2"> 
+            <div class="card"> 
+                <div class="card__header"><i data-lucide="message-square" style="width:20px;height:20px;color:var(--color-primary)"></i><span class="card__title" style="margin-left:var(--space-2)">Live Discussion</span></div> 
+                <p class="card__desc">Collaborate in real time with your team on equity initiatives, policy questions, and program planning.</p> 
+                <div class="card__footer"><span class="badge badge--success">Active</span></div> 
+            </div> 
+            <div class="card"> 
+                <div class="card__header"><i data-lucide="file-plus" style="width:20px;height:20px;color:var(--color-primary)"></i><span class="card__title" style="margin-left:var(--space-2)">Shared Documents</span></div> 
+                <p class="card__desc">Co-author documents, review drafts, and share resources across the team in one place.</p> 
+                <div class="card__footer"><span class="badge badge--primary">Coming Soon</span></div> 
+            </div> 
+            <div class="card"> 
+                <div class="card__header"><i data-lucide="calendar-check" style="width:20px;height:20px;color:var(--color-primary)"></i><span class="card__title" style="margin-left:var(--space-2)">Team Schedule</span></div> 
+                <p class="card__desc">Coordinate meetings, deadlines, and equity review cycles with a shared team calendar.</p> 
+                <div class="card__footer"><span class="badge badge--primary">Coming Soon</span></div> 
+            </div> 
+            <div class="card"> 
+                <div class="card__header"><i data-lucide="lightbulb" style="width:20px;height:20px;color:var(--color-primary)"></i><span class="card__title" style="margin-left:var(--space-2)">Ideas Board</span></div> 
+                <p class="card__desc">Capture and prioritize ideas for improving equity outcomes, workflows, and team processes.</p> 
+                <div class="card__footer"><span class="badge badge--primary">Coming Soon</span></div> 
+            </div> 
+        </div> 
+        <div class="card" style="margin-top:var(--space-6)"> 
+            <div class="card__header">${sectionTitle("Quick Chat", "message-circle")}</div> 
+            <div id="cowork-chat" style="min-height:120px;padding:var(--space-4);background:var(--color-surface-offset);border-radius:var(--radius-md);margin-bottom:var(--space-3)"> 
+                <div class="empty-state" style="padding:var(--space-4)"><i data-lucide="message-circle" style="width:32px;height:32px;opacity:.3"></i><p>No messages yet. Start the conversation!</p></div> 
+            </div> 
+            <div style="display:flex;gap:var(--space-2)"> 
+                <input type="text" id="cowork-input" class="assistant-input" placeholder="Say something to the team…" style="flex:1"> 
+                <button class="btn btn--primary" id="cowork-send"><i data-lucide="send" style="width:16px;height:16px"></i></button> 
+            </div> 
+        </div> 
+    </div>`; 
+    const chatEl = document.getElementById("cowork-chat"); 
+    const input = document.getElementById("cowork-input"); 
+    const sendBtn = document.getElementById("cowork-send"); 
+    const messages = []; 
+    function renderMessages() { 
+        if (!messages.length) return; 
+        chatEl.innerHTML = messages.map(m => `<div style="margin-bottom:var(--space-3)"><strong style="color:var(--color-primary)">${m.author}</strong> <span class="text-muted" style="font-size:var(--text-xs)">${m.time}</span><p style="margin-top:var(--space-1)">${m.text}</p></div>`).join(""); 
+    } 
+    function sendMessage() { 
+        const text = input.value.trim(); 
+        if (!text) return; 
+        messages.push({ author: "You", time: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }), text }); 
+        input.value = ""; 
+        renderMessages(); 
+        if (typeof lucide !== "undefined") lucide.createIcons(); 
+    } 
+    sendBtn.addEventListener("click", sendMessage); 
+    input.addEventListener("keydown", e => { if (e.key === "Enter") sendMessage(); }); 
+    if (typeof lucide !== "undefined") lucide.createIcons(); 
+} 
  /* ── Global: Clickable rows/cards ───────────────── */ 
  function setupClickableRows(container) { 
      $$(".clickable-row", container).forEach(row => { 
