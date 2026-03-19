@@ -740,75 +740,49 @@
      const inputEl = $("#assistant-input", el); 
      if (sendBtn) sendBtn.addEventListener("click", () => { if (inputEl.value.trim()) handleQuery(inputEl.value.trim()); }); 
      if (inputEl) inputEl.addEventListener("keydown", e => { if (e.key === "Enter" && inputEl.value.trim()) handleQuery(inputEl.value.trim()); }); 
-     function handleQuery(query) { 
-         inputEl.value = ""; 
-         chatEl.innerHTML += `<div class="assistant-msg assistant-msg--user"><p>${query}</p></div>`; 
-         const response = generateResponse(query, currentMode); 
-         chatEl.innerHTML += `<div class="assistant-msg assistant-msg--assistant">${response}</div>`; 
-         chatEl.scrollTop = chatEl.scrollHeight; 
-         if (typeof lucide !== "undefined") lucide.createIcons(); 
-     } 
-     function generateResponse(query, mode) { 
-         const q = query.toLowerCase(); 
-         if (mode === "policy" || q.includes("policy") || q.includes("authority") || q.includes("governing") || q.includes("compliance") || q.includes("clas") || q.includes("accessibility") || q.includes("ada")) { 
-             let docs = D.documents; 
-             if (q.includes("accessibility") || q.includes("ada")) docs = docs.filter(d => d.title.toLowerCase().includes("accessibility") || d.title.toLowerCase().includes("ada") || d.batch === "Accessibility and Language Access"); 
-             else if (q.includes("clas")) docs = docs.filter(d => d.title.toLowerCase().includes("clas") || d.equityMethod === "CLAS Implementation"); 
-             else if (q.includes("authority") || q.includes("hierarchy")) docs = docs.sort((a, b) => a.authorityRank - b.authorityRank); 
-             else if (q.includes("governing")) docs = docs.filter(d => d.batch === "Governing Authority"); 
-             else docs = docs.filter(d => d.authorityRank <= 3); 
-             docs = docs.sort((a, b) => a.authorityRank - b.authorityRank).slice(0, 8); 
-             return `<div class="assistant-section"><h4><i data-lucide="shield" style="width:16px;height:16px"></i> Source Authority</h4> 
-                 <p>Based on the program's authority hierarchy, here are the relevant sources (ranked by authority):</p> 
-                 <div class="assistant-sources">${docs.map(d => `<div class="assistant-source-item"> 
-                     <div class="assistant-source-header">${authorityBadge(d.authorityRank)} ${docLink(d.id)}</div> 
-                     <p class="text-muted">${d.purpose}</p> 
-                     <div>${batchBadge(d.batch)} ${badge(d.sourceType, d.sourceType === "Public" ? "primary" : "gold")} ${d.sourceOfTruth ? '<span class="badge badge--success">Source of Truth</span>' : ""}</div> 
-                 </div>`).join("")}</div> 
-                 <p class="assistant-note"><i data-lucide="info" style="width:14px;height:14px"></i> Documents are ranked by authority level. Law and federal guidance (ranks 1-2) take precedence over division and program-level guidance.</p> 
-             </div>`; 
-         } 
-         if (mode === "workflow" || q.includes("workflow") || q.includes("consultation") || q.includes("scan") || q.includes("review") || q.includes("quarterly") || q.includes("template") || q.includes("how do i")) { 
-             let wf; 
-             if (q.includes("consultation") || q.includes("intake") || q.includes("request")) wf = getById(D.workflows, "WF-001"); 
-             else if (q.includes("scan")) wf = getById(D.workflows, "WF-002"); 
-         
-  else if (q.includes("full") || q.includes("analysis")) wf = getById(D.workflows, "WF-003"); 
-             else if (q.includes("accessibility")) wf = getById(D.workflows, "WF-004"); 
-             else if (q.includes("community") || q.includes("engagement")) wf = getById(D.workflows, "WF-005"); 
-             else if (q.includes("learning") || q.includes("educational")) wf = getById(D.workflows, "WF-006"); 
-             else if (q.includes("quarterly") || q.includes("review")) wf = getById(D.workflows, "WF-007"); 
-             else wf = D.workflows[0]; 
-             const stages = wf.stages.sort((a, b) => a.order - b.order); 
-             const temps = (wf.outputTemplates || []).map(id => getById(D.templates, id)).filter(Boolean); 
-             return `<div class="assistant-section"><h4><i data-lucide="git-branch" style="width:16px;height:16px"></i> Workflow: ${wf.name}</h4> 
-                 <p>${wf.description}</p> 
-                 <div class="assistant-stages"><strong>Stages:</strong><ol>${stages.map(s => `<li>${s.name}</li>`).join("")}</ol></div> 
-                 ${temps.length ? `<div><strong>Templates needed:</strong><ul class="link-list">${temps.map(t => `<li>${tmpLink(t.id)}</li>`).join("")}</ul></div>` : ""} 
-                 ${(wf.requiredDocs || []).length ? `<div><strong>Required documents:</strong><ul class="link-list">${wf.requiredDocs.map(id => `<li>${docLink(id)}</li>`).join("")}</ul></div>` : ""} 
-                 <p><strong>Owner:</strong> ${roleLink(wf.owner)}</p> 
-                 <p class="assistant-note"><i data-lucide="info" style="width:14px;height:14px"></i> ${wfLink(wf.id)} for full details.</p> 
-             </div>`; 
-         } 
-         if (mode === "learning" || q.includes("educational") || q.includes("learning") || q.includes("course") || q.includes("job aid")) { 
-             let assets = D.learningAssets; 
-             if (q.includes("required") || q.includes("all staff")) assets = assets.filter(a => a.requiredOrOptional === "Required"); 
-             else if (q.includes("equity analysis")) assets = assets.filter(a => a.title.toLowerCase().includes("equity") || a.description.toLowerCase().includes("equity analysis")); 
-             else if (q.includes("accessibility")) assets = assets.filter(a => a.title.toLowerCase().includes("accessibility") || a.description.toLowerCase().includes("accessibility")); 
-             else if (q.includes("job aid")) assets = assets.filter(a => a.type === "Job Aid"); 
-             if (!assets.length) assets = D.learningAssets.slice(0, 5); 
-             return `<div class="assistant-section"><h4><i data-lucide="graduation-cap" style="width:16px;height:16px"></i> Learning Resources</h4> 
-                 <div class="assistant-sources">${assets.map(a => `<div class="assistant-source-item"> 
-                     <div class="assistant-source-header">${badge(a.type, a.type === "Microlearning" ? "primary" : "gold")} ${laLink(a.id)}</div> 
-                     <p class="text-muted">${a.description.slice(0, 100)}…</p> 
-                     <div>${badge(a.requiredOrOptional)} <span class="text-muted">${a.estimatedDuration || ""}</span> ${(a.audience || []).slice(0, 2).map(au => `<span class="badge badge--muted">${au}</span>`).join(" ")}</div> 
-   
-            </div>`).join("")}</div> 
-                 ${assets.some(a => (a.sourceDocs || []).length) ? `<p class="assistant-note"><i data-lucide="info" style="width:14px;height:14px"></i> These learning assets are grounded in source documents from the Knowledge Base. Authority-ranked sources take precedence.</p>` : ""} 
-             </div>`; 
-         } 
-         return `<p>I can help you find policies, navigate workflows, and discover learning resources. Try selecting a mode above and asking a more specific question about equity analysis, accessibility, consultation processes, or staff educational resources.</p>`; 
-     } 
+     async function handleQuery(query) {
+         inputEl.value = "";
+         sendBtn.disabled = true;
+         const escaped = query.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+         chatEl.innerHTML += `<div class="assistant-msg assistant-msg--user"><p>${escaped}</p></div>`;
+         const loadingId = "msg-loading-" + Date.now();
+         chatEl.innerHTML += `<div class="assistant-msg assistant-msg--assistant" id="${loadingId}"><span class="assistant-loading"><i data-lucide="loader-2" style="width:16px;height:16px"></i> Thinking…</span></div>`;
+         if (typeof lucide !== "undefined") lucide.createIcons();
+         chatEl.scrollTop = chatEl.scrollHeight;
+         let context = "";
+         if (currentMode === "policy") {
+             context = "Documents:\n" + D.documents.map(d => `- ${d.title} (Rank ${d.authorityRank}, ${d.batch}): ${d.purpose}`).join("\n");
+         } else if (currentMode === "workflow") {
+             context = "Workflows:\n" + D.workflows.map(w => `- ${w.name}: ${w.description}. Stages: ${(w.stages||[]).sort((a,b)=>a.order-b.order).map(s=>s.name).join(", ")}`).join("\n");
+         } else if (currentMode === "learning") {
+             context = "Learning Assets:\n" + D.learningAssets.map(a => `- ${a.title} (${a.type}, ${a.requiredOrOptional}): ${a.description.slice(0,120)}`).join("\n");
+         }
+         try {
+             const res = await fetch("/api/claude", {
+                 method: "POST",
+                 headers: { "Content-Type": "application/json" },
+                 body: JSON.stringify({ query, mode: currentMode, context })
+             });
+             const data = await res.json();
+             const loadingEl = document.getElementById(loadingId);
+             if (loadingEl) {
+                 if (data.response) {
+                     const html = data.response
+                         .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+                         .replace(/\n\n/g,"</p><p>").replace(/\n/g,"<br>");
+                     loadingEl.innerHTML = `<div class="assistant-section"><p>${html}</p></div>`;
+                 } else {
+                     loadingEl.innerHTML = `<p style="color:var(--color-error)">Error: ${data.error || "Unknown error"}</p>`;
+                 }
+             }
+         } catch (err) {
+             const loadingEl = document.getElementById(loadingId);
+             if (loadingEl) loadingEl.innerHTML = `<p style="color:var(--color-error)">Cannot reach the local server. Start it with <strong>node server.js</strong>.</p>`;
+         }
+         sendBtn.disabled = false;
+         chatEl.scrollTop = chatEl.scrollHeight;
+         if (typeof lucide !== "undefined") lucide.createIcons();
+     }
      showQuestions(); 
  } 
  /* ── ROLES ──────────────────────────────────────── */ 
