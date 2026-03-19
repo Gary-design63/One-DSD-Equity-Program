@@ -745,10 +745,19 @@
          sendBtn.disabled = true;
          const escaped = query.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
          chatEl.innerHTML += `<div class="assistant-msg assistant-msg--user"><p>${escaped}</p></div>`;
-         const loadingId = "msg-loading-" + Date.now();
-         chatEl.innerHTML += `<div class="assistant-msg assistant-msg--assistant" id="${loadingId}"><span class="assistant-loading"><i data-lucide="loader-2" style="width:16px;height:16px"></i> Thinking…</span></div>`;
+         // Create the assistant message element up-front so we can stream into it
+         const msgEl = document.createElement("div");
+         msgEl.className = "assistant-msg assistant-msg--assistant";
+         const sectionEl = document.createElement("div");
+         sectionEl.className = "assistant-section";
+         const pEl = document.createElement("p");
+         pEl.innerHTML = '<span class="assistant-loading"><i data-lucide="loader-2" style="width:16px;height:16px"></i> Thinking…</span>';
+         sectionEl.appendChild(pEl);
+         msgEl.appendChild(sectionEl);
+         chatEl.appendChild(msgEl);
          if (typeof lucide !== "undefined") lucide.createIcons();
          chatEl.scrollTop = chatEl.scrollHeight;
+         // Build context snapshot from app data for the selected mode
          let context = "";
          if (currentMode === "policy") {
              context = "Documents:\n" + D.documents.map(d => `- ${d.title} (Rank ${d.authorityRank}, ${d.batch}): ${d.purpose}`).join("\n");
@@ -763,21 +772,48 @@
                  headers: { "Content-Type": "application/json" },
                  body: JSON.stringify({ query, mode: currentMode, context })
              });
-             const data = await res.json();
-             const loadingEl = document.getElementById(loadingId);
-             if (loadingEl) {
-                 if (data.response) {
-                     const html = data.response
-                         .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
-                         .replace(/\n\n/g,"</p><p>").replace(/\n/g,"<br>");
-                     loadingEl.innerHTML = `<div class="assistant-section"><p>${html}</p></div>`;
-                 } else {
-                     loadingEl.innerHTML = `<p style="color:var(--color-error)">Error: ${data.error || "Unknown error"}</p>`;
+             if (!res.ok) {
+                 const data = await res.json().catch(() => ({}));
+                 pEl.innerHTML = `<span style="color:var(--color-error)">Error ${res.status}: ${data.error || res.statusText}</span>`;
+                 sendBtn.disabled = false;
+                 return;
+             }
+             // Read SSE stream and update the DOM progressively
+             const reader = res.body.getReader();
+             const decoder = new TextDecoder();
+             let buffer = "";
+             let accumulated = "";
+             let firstChunk = true;
+             outer: while (true) {
+                 const { done, value } = await reader.read();
+                 if (done) break;
+                 buffer += decoder.decode(value, { stream: true });
+                 const lines = buffer.split("\n");
+                 buffer = lines.pop(); // keep incomplete line for next chunk
+                 for (const line of lines) {
+                     if (!line.startsWith("data: ")) continue;
+                     const raw = line.slice(6);
+                     if (raw === "[DONE]") break outer;
+                     let parsed;
+                     try { parsed = JSON.parse(raw); } catch { continue; }
+                     if (parsed.error) {
+                         pEl.innerHTML = `<span style="color:var(--color-error)">${parsed.error}</span>`;
+                         break outer;
+                     }
+                     if (parsed.text) {
+                         if (firstChunk) { pEl.innerHTML = ""; firstChunk = false; }
+                         accumulated += parsed.text;
+                         // Escape then restore paragraphs and line breaks for display
+                         const html = accumulated
+                             .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+                             .replace(/\n\n/g,"</p><p>").replace(/\n/g,"<br>");
+                         pEl.innerHTML = html;
+                         chatEl.scrollTop = chatEl.scrollHeight;
+                     }
                  }
              }
          } catch (err) {
-             const loadingEl = document.getElementById(loadingId);
-             if (loadingEl) loadingEl.innerHTML = `<p style="color:var(--color-error)">Cannot reach the local server. Start it with <strong>node server.js</strong>.</p>`;
+             pEl.innerHTML = `<span style="color:var(--color-error)">Cannot reach the local server. Start it with <strong>node server.js</strong>.</span>`;
          }
          sendBtn.disabled = false;
          chatEl.scrollTop = chatEl.scrollHeight;

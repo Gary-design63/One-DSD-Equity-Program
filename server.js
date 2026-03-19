@@ -1,6 +1,6 @@
 /* ============================================================
    One DSD Equity Platform — Local Server
-   Serves the static app and proxies Claude API calls.
+   Serves the static app and proxies Claude API calls via SSE streaming.
    ============================================================ */
 import express from 'express';
 import Anthropic from '@anthropic-ai/sdk';
@@ -24,7 +24,7 @@ app.get('/', (req, res) => {
   res.sendFile(join(__dirname, 'index.html'));
 });
 
-// ── Claude API proxy ─────────────────────────────────────────
+// ── Claude API proxy — SSE streaming ────────────────────────────
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 app.post('/api/claude', async (req, res) => {
@@ -56,22 +56,47 @@ ${context ? `Program knowledge base:\n${context}\n` : ''}Guidelines:
 - Focus on practical guidance for DSD staff doing equity work
 - Keep responses under 300 words unless detail is genuinely necessary`;
 
+  // SSE headers — stream response back to browser
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+  });
+
+  const send = (payload) => res.write(`data: ${JSON.stringify(payload)}\n\n`);
+
   try {
-    const message = await anthropic.messages.create({
+    const stream = anthropic.messages.stream({
       model: 'claude-opus-4-6',
-      max_tokens: 1024,
+      max_tokens: 64000,
+      thinking: { type: 'adaptive' },
       system: systemPrompt,
       messages: [{ role: 'user', content: query }],
     });
-    res.json({ response: message.content[0].text });
+
+    // Only forward text deltas — thinking blocks are intentionally skipped
+    stream.on('text', (delta) => send({ text: delta }));
+
+    await stream.finalMessage();
+    res.write('data: [DONE]\n\n');
   } catch (err) {
-    console.error('Claude API error:', err.message);
-    res.status(500).json({ error: err.message || 'Failed to get response from Claude' });
+    if (err instanceof Anthropic.AuthenticationError) {
+      send({ error: 'Invalid API key. Check ANTHROPIC_API_KEY in your .env file.' });
+    } else if (err instanceof Anthropic.RateLimitError) {
+      send({ error: 'Rate limited — please wait a moment and try again.' });
+    } else if (err instanceof Anthropic.APIError) {
+      send({ error: `API error ${err.status}: ${err.message}` });
+    } else {
+      send({ error: 'Unexpected server error. Check the terminal for details.' });
+      console.error('Unexpected error:', err);
+    }
+  } finally {
+    res.end();
   }
 });
 
 app.listen(PORT, () => {
   console.log(`\n  One DSD Equity Platform`);
   console.log(`  Local:  http://localhost:${PORT}`);
-  console.log(`  Claude: ${process.env.ANTHROPIC_API_KEY ? 'API key loaded' : 'WARNING: no ANTHROPIC_API_KEY'}\n`);
+  console.log(`  Claude: ${process.env.ANTHROPIC_API_KEY ? 'API key loaded ✓' : 'WARNING — ANTHROPIC_API_KEY not set'}\n`);
 });
