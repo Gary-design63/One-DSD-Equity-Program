@@ -1,138 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>One DSD Equity Program — Minnesota DHS Disability Services Division</title>
-  <meta name="description" content="Equity and inclusion operations dashboard for the Minnesota Department of Human Services, Disability Services Division.">
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Styles -->
-  <link rel="stylesheet" href="base.css">
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="crud.css">
-</head>
-<body>
-  <div class="dashboard">
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar__brand">
-        <svg class="sidebar__logo" width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-          <rect width="32" height="32" rx="8" fill="currentColor" opacity="0.15"/>
-          <path d="M8 16a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4h4v8H8V16z" fill="currentColor"/>
-          <circle cx="20" cy="12" r="4" fill="currentColor"/>
-          <rect x="18" y="18" width="8" height="4" rx="2" fill="currentColor" opacity="0.6"/>
-        </svg>
-        <div class="sidebar__brand-text">
-          <span class="sidebar__title">One DSD</span>
-          <span class="sidebar__subtitle">Equity Program</span>
-        </div>
-      </div>
-      <nav class="sidebar__nav" role="navigation" aria-label="Main navigation">
-        <ul role="list">
-          <li>
-            <button class="nav-item active" data-page="dashboard" data-icon="layout-dashboard">
-              <span class="nav-item__icon" aria-hidden="true"></span>
-              <span class="nav-item__label">Dashboard</span>
-            </button>
-          </li>
-          <li>
-            <button class="nav-item" data-page="knowledge-base" data-icon="book-open">
-              <span class="nav-item__icon" aria-hidden="true"></span>
-              <span class="nav-item__label">Knowledge Base</span>
-            </button>
-          </li>
-          <li>
-            <button class="nav-item" data-page="workflows" data-icon="git-branch">
-              <span class="nav-item__icon" aria-hidden="true"></span>
-              <span class="nav-item__label">Workflows</span>
-            </button>
-          </li>
-          <li>
-            <button class="nav-item" data-page="templates" data-icon="file-text">
-              <span class="nav-item__icon" aria-hidden="true"></span>
-              <span class="nav-item__label">Templates</span>
-            </button>
-          </li>
-          <li>
-            <button class="nav-item" data-page="metrics" data-icon="bar-chart-3">
-              <span class="nav-item__icon" aria-hidden="true"></span>
-              <span class="nav-item__label">Metrics</span>
-            </button>
-          </li>
-          <li>
-            <button class="nav-item" data-page="learning" data-icon="graduation-cap">
-              <span class="nav-item__icon" aria-hidden="true"></span>
-              <span class="nav-item__label">Learning</span>
-            </button>
-          </li>
-          <li>
-            <button class="nav-item" data-page="assistant" data-icon="message-circle">
-              <span class="nav-item__icon" aria-hidden="true"></span>
-              <span class="nav-item__label">Assistant</span>
-            </button>
-          </li>
-          <li>
-            <button class="nav-item" data-page="roles" data-icon="users">
-              <span class="nav-item__icon" aria-hidden="true"></span>
-              <span class="nav-item__label">Roles</span>
-            </button>
-          </li>
-          <li>
-            <button class="nav-item" data-page="actions" data-icon="check-circle-2">
-              <span class="nav-item__icon" aria-hidden="true"></span>
-              <span class="nav-item__label">Actions</span>
-            </button>
-          </li>
-          <li>
-            <button class="nav-item" data-page="risks" data-icon="alert-triangle">
-              <span class="nav-item__icon" aria-hidden="true"></span>
-              <span class="nav-item__label">Risks</span>
-            </button>
-          </li>
-        </ul>
-      </nav>
-      <div class="sidebar__footer">
-        <span class="sidebar__period">Q1 FY2026</span>
-      </div>
-    </aside>
-    <!-- Sidebar overlay for mobile -->
-    <div class="sidebar-overlay" id="sidebar-overlay"></div>
-    <!-- Header -->
-    <header class="header">
-      <div class="header__left">
-        <button class="hamburger" id="hamburger" aria-label="Open navigation menu" aria-expanded="false" aria-controls="sidebar">
-          <span class="hamburger__icon" aria-hidden="true"></span>
-        </button>
-        <span class="header__page-title" id="page-title">Dashboard</span>
-      </div>
-      <div class="header__right">
-        <div class="header__search">
-          <span class="header__search-icon" aria-hidden="true"></span>
-          <input type="search" class="header__search-input" placeholder="Search programs, documents, metrics…" aria-label="Search">
-        </div>
-        <button class="header__icon-btn" data-theme-toggle aria-label="Switch to dark mode">
-          <span class="theme-icon" aria-hidden="true"></span>
-        </button>
-        <button class="header__icon-btn header__notification-btn" aria-label="Notifications">
-          <span class="notification-icon" aria-hidden="true"></span>
-          <span class="header__notification-badge" aria-label="3 notifications">3</span>
-        </button>
-      </div>
-    </header>
-    <!-- Main content -->
-    <main class="main" id="main-content">
-      <!-- Page content injected by app.js -->
-    </main>
-  </div>
-  <!-- Scripts -->
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-  <script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
-  <script src="data.js"></script>
-  <script src="auth.js"></script>
-  <script src="app.js"></script>
-  <script src="crud.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>One DSD Equity Program — Minnesota DHS Disability Services Division</title>
+    <meta name="description" content="One DSD Equity and Inclusion Agentic Operations Platform — Minnesota Department of Human Services, Disability Services Division. AI-powered equity intelligence for disability services." />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
