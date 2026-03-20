@@ -1,73 +1,104 @@
-# Welcome to your Lovable project
+# One DSD Equity Program
 
-## Project info
+**Minnesota Department of Human Services — Disability Services Division**
+Equity and Inclusion Operations Platform
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+---
 
-## How can I edit this code?
+## Live Application
 
-There are several ways of editing your application.
+**Production URL:** https://equity-layout-shell.lovable.app
 
-**Use Lovable**
+DSD staff access the app at the URL above. The application is deployed automatically from the `main` branch via Lovable whenever code is pushed.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## What This Is
 
-**Use your preferred IDE**
+The One DSD Equity Program platform is the operational hub for DSD's equity work. It provides:
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- **Dashboard** — KPI monitoring, active workflow runs, program actions, and risk register
+- **Knowledge Base** — Governing documents, equity tools, and program references organized by authority level
+- **Workflows** — Guided processes for equity scans, full analyses, accessibility reviews, and community engagement
+- **Templates** — Operational forms and worksheets for all program workflows
+- **Metrics** — Key performance indicators with trend tracking
+- **Learning** — Equity educational resources and staff development assets
+- **Assistant** — AI-assisted equity guidance (in development)
+- **Roles** — Role governance and decision authority documentation (admin only)
+- **Actions** — Program action item tracker (admin only)
+- **Risks** — Program risk register (admin only)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## Cloud Architecture
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+The system runs entirely in the cloud — no local hosting required.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+| Layer | Platform | Details |
+|-------|----------|---------|
+| Frontend | Lovable | React/Vite/TypeScript, auto-deployed from GitHub `main` |
+| Database & Auth | Supabase | `pmwqakhmcudwokupzsfj.supabase.co` |
+| Source code | GitHub | `Gary-design63/One-DSD-Equity-Program` |
 
-# Step 3: Install the necessary dependencies.
-npm i
+For full architecture details, access controls, data residency, backup procedures, and handoff planning, see **[CLOUD-ARCHITECTURE.md](./CLOUD-ARCHITECTURE.md)**.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+---
+
+## Technology Stack
+
+- **React 18** with TypeScript
+- **Vite** build tool
+- **Tailwind CSS** + shadcn/ui component library
+- **Supabase** (PostgreSQL + Auth + Storage)
+- **Lovable** (build and hosting platform)
+- **Lucide React** icons
+
+---
+
+## Development
+
+### Prerequisites
+- Node.js 18+ and npm
+- Access to the Supabase project (contact Gary Bellows)
+- Environment variables configured (see below)
+
+### Environment Variables
+
+Create a `.env.local` file at the project root (this file is gitignored — never commit secrets):
+
+```
+VITE_SUPABASE_URL=https://pmwqakhmcudwokupzsfj.supabase.co
+VITE_SUPABASE_ANON_KEY=<get from Supabase dashboard — anon/public key only>
 ```
 
-**Edit a file directly in GitHub**
+### Local Development
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+# Install dependencies
+npm install
 
-**Use GitHub Codespaces**
+# Start dev server (http://localhost:5173)
+npm run dev
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+# Run tests
+npm test
 
-## What technologies are used for this project?
+# Build for production
+npm run build
+```
 
-This project is built with:
+### Deploying
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Push to the `main` branch. Lovable automatically builds and deploys within ~60 seconds.
 
-## How can I deploy this project?
+Do not push secrets, `.env` files, or service role keys to GitHub.
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+---
 
-## Can I connect a custom domain to my Lovable project?
+## Contributing
 
-Yes, you can!
+The active development branch is `claude/convert-elearning-to-html-3Kzfn`. All changes go to that branch first, then merge to `main` for deployment.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+For questions about the equity program itself, contact:
+**Gary Bellows** — gary.bellows@state.mn.us
+Equity and Inclusion Operations Consultant, Disability Services Division
