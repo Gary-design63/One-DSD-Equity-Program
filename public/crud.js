@@ -1,592 +1,424 @@
-/* ============================================================ 
-   One DSD Equity Program — CRUD Module 
-   Add/Edit/Delete functionality for all entities 
-   ============================================================ */ (function () { 
- "use strict"; 
- const D = window.APP_DATA; 
- const $ = (s, c) => (c || document).querySelector(s); 
- const $$ = (s, c) => [...(c || document).querySelectorAll(s)]; 
- /* ── ID Generation ──────────────────────────────── */ 
- function nextId(prefix, arr) { 
-     const nums = arr.map(i => parseInt(i.id.replace(/\D/g, ""), 10) || 0); 
-     const max = nums.length ? Math.max(...nums) : 0; 
-     return `${prefix}-${String(max + 1).padStart(3, "0")}`; 
- } 
- /* ── Modal System ───────────────────────────────── */ 
- function createModal() { 
-     let overlay = document.getElementById("crud-modal-overlay"); 
-     if (overlay) return overlay; 
-     overlay = document.createElement("div"); 
-     overlay.id = "crud-modal-overlay"; 
-     overlay.className = "modal-overlay"; 
-     overlay.innerHTML = `<div class="modal" id="crud-modal"> 
-         <div class="modal__header"> 
-             <h2 class="modal__title" id="modal-title"></h2> 
-             <button class="modal__close" id="modal-close" aria-label="Close modal"><i data-lucide="x" style="width:20px;height:20px"></i></button> 
-         </div> 
-         <div class="modal__body" id="modal-body"></div> 
-         <div class="modal__footer" id="modal-footer"></div> 
-     </div>`; 
-     document.body.appendChild(overlay); 
-     overlay.addEventListener("click", (e) => { 
-         if (e.target === overlay) closeModal(); 
-     }); 
-     document.getElementById("modal-close").addEventListener("click", closeModal); 
-     document.addEventListener("keydown", (e) => { 
-         if (e.key === "Escape") closeModal(); 
-     }); 
-     return overlay; 
- } 
- function openModal(title, bodyHTML, footerHTML) { 
-     const overlay = createModal(); 
-     document.getElementById("modal-title").textContent = title; 
-     document.getElementById("modal-body").innerHTML = bodyHTML; 
-     document.getElementById("modal-footer").innerHTML = footerHTML; 
-     overlay.classList.add("modal-overlay--visible"); 
-     document.body.style.overflow = "hidden"; 
-     if (typeof lucide !== "undefined") lucide.createIcons(); 
-     // Focus first input 
-     const firstInput = overlay.querySelector("input, select, textarea"); 
-     if (firstInput) setTimeout(() => firstInput.focus(), 100); 
- } 
- function closeModal() { 
-     const overlay = document.getElementById("crud-modal-overlay"); 
-     if (overlay) { 
-         overlay.classList.remove("modal-overlay--visible"); 
-         document.body.style.overflow = ""; 
-     } 
- } 
- /* ── Form Field Builders ────────────────────────── */ 
- function field(label, name, type, value, opts) { 
-     const o = opts || {}; 
-     const req = o.required ? "required" : ""; 
-     const id = `field-${name}`; 
-     let input; 
-     if (type === "select") { 
-         input = `<select id="${id}" name="${name}" class="form-input" ${req}> 
-             ${o.placeholder ? `<option value="">${o.placeholder}</option>` : ""} 
-             ${(o.options || []).map(op => `<option value="${op.value || op}" ${(value || "") === (op.value || op) ? "selected" : ""}>${op.label || op}</option>`).join("")} 
-         </select>`; 
-     } else if (type === "textarea") { 
-         input = `<textarea id="${id}" name="${name}" class="form-input form-textarea" rows="${o.rows || 3}" ${req} placeholder="${o.placeholder || ""}">${value || ""}</textarea>`; 
-     } else if (type === "date") { 
-         input = `<input type="date" id="${id}" name="${name}" class="form-input" value="${value || ""}" ${req}>`; 
-     } else if (type === "number") { 
-         input = `<input type="number" id="${id}" name="${name}" class="form-input" value="${value || ""}" ${req} step="${o.step || "any"}" min="${o.min != null ? o.min : ""}" max="${o.max != null ? o.max : ""}">`; 
-     } else if (type === "checkbox") { 
-         input = `<label class="form-checkbox"><input type="checkbox" id="${id}" name="${name}" ${value ? "checked" : ""}> ${o.checkLabel || ""}</label>`; 
-     } else { 
-         input = `<input type="text" id="${id}" name="${name}" class="form-input" value="${escapeAttr(value || "")}" ${req} placeholder="${o.placeholder || ""}">`; 
-     } 
-     return `<div class="form-group"><label class="form-label" for="${id}">${label}${o.required ? ' <span class="form-required">*</span>' : ""}</label>${input}</div>`; 
- } 
- function escapeAttr(s) { return String(s).replace(/"/g, "&quot;").replace(/</g, "&lt;"); } 
- function getFormData(names) { 
-     const data = {}; 
-     names.forEach(name => { 
-         const el = document.getElementById(`field-${name}`); 
-         if (!el) return; 
-         if (el.type === "checkbox") data[name] = el.checked; 
-         else if (el.type === "number") data[name] = el.value ? parseFloat(el.value) : null; 
-         else data[name] = el.value; 
-     }); 
-     return data; 
- } 
- function confirmDelete(entityType, entityName, callback) { 
-     openModal( 
-         `Delete ${entityType}`, 
-         `<div class="delete-confirm"> 
-             <i data-lucide="alert-triangle" style="width:48px;height:48px;color:var(--color-error);margin-bottom:var(--space-3)"></i> 
-             <p>Are you sure you want to delete <strong>${entityName}</strong>?</p> 
-         
-  <p class="text-muted">This action cannot be undone.</p> 
-         </div>`, 
-         `<button class="btn btn--ghost" id="btn-cancel">Cancel</button> 
-           <button class="btn btn--danger" id="btn-confirm-delete">Delete</button>` 
-     ); 
-     document.getElementById("btn-cancel").addEventListener("click", closeModal); 
-     document.getElementById("btn-confirm-delete").addEventListener("click", () => { 
-         callback(); 
-         closeModal(); 
-     }); 
- } 
- /* ── Role Options (reused across forms) ─────────── */ 
- function roleOptions() { 
-     return D.roles.map(r => ({ value: r.id, label: r.name })); 
- } 
- function workflowOptions() { 
-     return D.workflows.map(w => ({ value: w.id, label: w.name })); 
- } 
- function kpiOptions() { 
-     return D.kpis.map(k => ({ value: k.id, label: `${k.id}: ${k.name}` })); 
- } 
- /* ── Toast Notification ─────────────────────────── */ 
- function showToast(message, type) { 
-     const t = type || "success"; 
-     let container = document.getElementById("toast-container"); 
-     if (!container) { 
- 
-      container = document.createElement("div"); 
-         container.id = "toast-container"; 
-         container.className = "toast-container"; 
-         document.body.appendChild(container); 
-     } 
-     const toast = document.createElement("div"); 
-     toast.className = `toast toast--${t}`; 
-     toast.innerHTML = `<i data-lucide="${t === "success" ? "check-circle-2" : t === "error" ? "x-circle" : "info"}" style="width:16px;height:16px"></i><span>${message}</span>`; 
-     container.appendChild(toast); 
-     if (typeof lucide !== "undefined") lucide.createIcons(); 
-     setTimeout(() => { toast.classList.add("toast--exit"); setTimeout(() => toast.remove(), 300); }, 3000); 
- } 
- /* ============================================================ 
-       ACTIONS CRUD 
-       ============================================================ */ 
- function openActionForm(action) { 
-     const isEdit = !!action; 
-     const a = action || {}; 
-     const body = `<form id="action-form" class="modal-form"> 
-         ${field("Title", "title", "text", a.title, { required: true, placeholder: "Action title" })} 
-         ${field("Description", "description", "textarea", a.description, { required: true, rows: 3 })} 
-         ${field("Owner", "owner", "select", a.owner, { required: true, placeholder: "Select owner", options: roleOptions() })} 
-         ${field("Status", "status", "select", a.status || "On Track", { required: true, options: ["On Track", "At Risk", "Overdue", "Completed"] })} 
-         ${field("Priority", "priority", "select", a.priority || "Medium", { required: true, options: ["High", "Medium", "Low"] })} 
-         ${field("Due Date", "dueDate", "date", a.dueDate, { required: true })} 
-     </form>`; 
-     openModal( 
-         isEdit ? "Edit Action" : "Add Action", 
-         body, 
-         `<button class="btn btn--ghost" id="btn-cancel">Cancel</button> 
-           <button class="btn btn--primary" id="btn-save">${isEdit ? "Save Changes" : "Add Action"}</button>` 
-     ); 
-     document.getElementById("btn-cancel").addEventListener("click", closeModal); 
-     document.getElementById("btn-save").addEventListener("click", () => { 
-         const form = document.getElementById("action-form"); 
-         if (!form.checkValidity()) { form.reportValidity(); return; } 
-         const data = getFormData(["title", "description", "owner", "status", "priority", "dueDate"]); 
-         if (isEdit) { 
-             Object.assign(action, data); 
-             showToast("Action updated successfully"); 
-         } else { 
-             data.id = nextId("ACT", D.actions); 
-             data.linkedKPIs = []; 
-             data.linkedWorkflows = []; 
-             D.actions.push(data); 
- 
-          showToast("Action added successfully"); 
-         } 
-         closeModal(); 
-         window.dispatchEvent(new HashChangeEvent("hashchange")); 
-     }); 
- } 
- function deleteAction(id) { 
-     const idx = D.actions.findIndex(a => a.id === id); 
-     if (idx >= 0) { 
-         const name = D.actions[idx].title; 
-         confirmDelete("Action", name, () => { 
-             D.actions.splice(idx, 1); 
-             showToast("Action deleted"); 
-             window.dispatchEvent(new HashChangeEvent("hashchange")); 
-         }); 
-     } 
- } 
- /* ============================================================ 
-       RISKS CRUD 
-       ============================================================ */ 
- function openRiskForm(risk) { 
-     const isEdit = !!risk; 
-     const r = risk || {}; 
-     const body = `<form id="risk-form" class="modal-form"> 
-         ${field("Title", "title", "text", r.title, { required: true, placeholder: "Risk title" })} 
-         ${field("Description", "description", "textarea", r.description, { required: true, rows: 3 })} 
-         ${field("Severity", "severity", "select", r.severity || "Medium", { required: true, options: ["High", "Medium", "Low"] })} 
-         ${field("Likelihood", "likelihood", "select", r.likelihood || "Medium", { required: true, options: ["High", "Medium", "Low"] })} 
-         ${field("Status", "status", "select", r.status || "Active", { required: true, options: ["Active", "Monitoring", "Mitigated", "Closed"] })} 
-         ${field("Owner", "owner", "select", r.owner, { required: true, placeholder: "Select owner", options: roleOptions() })} 
-         ${field("Mitigation Plan", "mitigationPlan", "textarea", r.mitigationPlan, { required: true, rows: 4 })} 
-     </form>`; 
-     openModal( 
-         isEdit ? "Edit Risk" : "Add Risk", 
-         body, 
-         `<button class="btn btn--ghost" id="btn-cancel">Cancel</button> 
-           <button class="btn btn--primary" id="btn-save">${isEdit ? "Save Changes" : "Add Risk"}</button>` 
-     ); 
-     document.getElementById("btn-cancel").addEventListener("click", closeModal); 
-     document.getElementById("btn-save").addEventListener("click", () => { 
-         const form = document.getElementById("risk-form"); 
-         if (!form.checkValidity()) { form.reportValidity(); return; } 
-         const data = getFormData(["title", "description", "severity", "likelihood", "status", "owner", "mitigationPlan"]); 
-         if (isEdit) { 
-             Object.assign(risk, data); 
-             showToast("Risk updated successfully"); 
-         } else { 
-             data.id = nextId("RISK", D.risks); 
-             data.linkedKPIs = []; 
-             data.linkedWorkflows = []; 
-             data.linkedActions = []; 
- 
-          D.risks.push(data); 
-             showToast("Risk added successfully"); 
-         } 
-         closeModal(); 
-         window.dispatchEvent(new HashChangeEvent("hashchange")); 
-     }); 
- } 
- function deleteRisk(id) { 
-     const idx = D.risks.findIndex(r => r.id === id); 
-     if (idx >= 0) { 
-         const name = D.risks[idx].title; 
-         confirmDelete("Risk", name, () => { 
-             D.risks.splice(idx, 1); 
-             showToast("Risk deleted"); 
-             window.dispatchEvent(new HashChangeEvent("hashchange")); 
-         }); 
-     } 
- } 
-  /* ============================================================ 
-       DOCUMENTS CRUD 
-       ============================================================ */ 
- function openDocumentForm(doc) { 
-     const isEdit = !!doc; 
-     const d = doc || {}; 
-     const batches = ["Governing Authority", "Institutional Context", "Equity Analysis and Engagement", 
-         "Accessibility and Language Access", "Workforce Equity", "Service System Operations", 
-         "Training and Reusable Resources", "One DSD Program Core Internal", "Program Operations Internal", 
-         "Data and Measurement Internal", "Learning Architecture Internal", "Templates Internal"]; 
-     const body = `<form id="doc-form" class="modal-form"> 
-         ${field("Title", "title", "text", d.title, { required: true, placeholder: "Full document title" })} 
-         ${field("Short Title", "shortTitle", "text", d.shortTitle, { placeholder: "Abbreviated name" })} 
-         ${field("Batch", "batch", "select", d.batch, { required: true, placeholder: "Select batch", options: batches })} 
- 
-      ${field("Authority Type", "authorityType", "select", d.authorityType, { required: true, placeholder: "Select type", 
-             options: ["Federal Guidance", "Federal/State Law", "State Policy", "Enterprise Policy", "Division Policy", "Program Guidance", "Operational Procedure", "Training Resource"] })} 
-         ${field("Authority Rank", "authorityRank", "number", d.authorityRank, { required: true, min: 1, max: 8, step: 1 })} 
-         ${field("Source Type", "sourceType", "select", d.sourceType || "Public", { required: true, options: ["Public", "Internal"] })} 
-         ${field("Source Organization", "sourceOrg", "text", d.sourceOrg, { placeholder: "Originating organization" })} 
-         ${field("Document Type", "documentType", "text", d.documentType, { placeholder: "e.g., Standards / Framework" })} 
-         ${field("Status", "status", "select", d.status || "Active", { required: true, options: ["Active", "Draft", "Under Review", "Archived", "Superseded"] })} 
-         ${field("Owner", "owner", "select", d.owner, { required: true, placeholder: "Select owner", options: roleOptions() })} 
-         ${field("Purpose", "purpose", "textarea", d.purpose, { required: true, rows: 3 })} 
-         ${field("Effective Date", "effectiveDate", "date", d.effectiveDate)} 
-         ${field("Review Date", "reviewDate", "date", d.reviewDate)} 
-         ${field("Source of Truth", "sourceOfTruth", "checkbox", d.sourceOfTruth, { checkLabel: "This document is the source of truth" })} 
-         ${field("Required for Compliance", "requiredForCompliance", "checkbox", d.requiredForCompliance, { checkLabel: "Required for compliance" })} 
-     </form>`; 
-     openModal( 
-         isEdit ? "Edit Document" : "Add Document", 
-         body, 
-         `<button class="btn btn--ghost" id="btn-cancel">Cancel</button> 
-           <button class="btn btn--primary" id="btn-save">${isEdit ? "Save Changes" : "Add Document"}</button>` 
-     ); 
-     document.getElementById("btn-cancel").addEventListener("click", closeModal); 
-     document.getElementById("btn-save").addEventListener("click", () => { 
-         const form = document.getElementById("doc-form"); 
-         if (!form.checkValidity()) { form.reportValidity(); return; } 
-         const data = getFormData(["title", "shortTitle", "batch", "authorityType", "authorityRank", "sourceType", "sourceOrg", "documentType", "status", "owner", "purpose", "effectiveDate", "reviewDate", "sourceOfTruth", "requiredForCompliance"]); 
-         data.authorityRank = parseInt(data.authorityRank, 10) || 5; 
-         if (isEdit) { 
-             Object.assign(doc, data); 
-             showToast("Document updated successfully"); 
-         } else { 
-             data.id = nextId("DOC", D.documents); 
-             data.format = "Web"; 
-             data.audience = ""; 
-             data.processingStatus = "Tagged"; 
-             data.programRelevance = ""; 
-             data.trainingRelevance = ""; 
-             data.equityMethod = ""; 
-             data.institutionalScope = ""; 
-             data.geographicScope = ""; 
-             data.notes = ""; 
-             D.documents.push(data); 
-             showToast("Document added successfully"); 
-         } 
-         closeModal(); 
-         window.dispatchEvent(new HashChangeEvent("hashchange")); 
-     }); 
- } 
- function deleteDocument(id) { 
-     const idx = D.documents.findIndex(d => d.id === id); 
-     if (idx >= 0) { 
-         const name = D.documents[idx].title; 
-         confirmDelete("Document", name, () => { 
-             D.documents.splice(idx, 1); 
-             showToast("Document deleted"); 
-             location.hash = "knowledge-base"; 
-         }); 
-     } 
- } 
- /* ============================================================ 
-       KPI EDIT 
-       ============================================================ */ 
- function openKPIForm(kpi) { 
-     if (!kpi) return; 
-     const body = `<form id="kpi-form" class="modal-form"> 
-         <div class="form-group"><label class="form-label">KPI</label><p class="form-static">${kpi.name} (${kpi.id})</p></div> 
-         ${field("Current Value", "currentValue", "number", kpi.currentValue, { required: true, step: "any" })} 
-         ${field("Target", "target", "number", kpi.target, { step: "any" })} 
-         ${field("Trend", "trend", "select", kpi.trend, { required: true, options: ["up", "down", "flat"] })} 
-         ${field("Data Quality", "dataQuality", "select", kpi.dataQuality || "High", { required: true, options: ["High", "Medium", "Low", "Needs Validation"] })} 
-         ${field("Owner", "owner", "select", kpi.owner, { required: true, placeholder: "Select owner", options: roleOptions() })} 
-     </form>`; 
-     openModal( 
-         "Edit KPI", 
-         body, 
-         `<button class="btn btn--ghost" id="btn-cancel">Cancel</button> 
-           <button class="btn btn--primary" id="btn-save">Save Changes</button>` 
-     ); 
-     document.getElementById("btn-cancel").addEventListener("click", closeModal); 
-     document.getElementById("btn-save").addEventListener("click", () => { 
-         const form = document.getElementById("kpi-form"); 
-         if (!form.checkValidity()) { form.reportValidity(); return; } 
-         const data = getFormData(["currentValue", "trend", "target", "dataQuality", "owner"]); 
-         kpi.previousValue = kpi.currentValue; 
-         Object.assign(kpi, data); 
-         showToast("KPI updated successfully"); 
-     
-  closeModal(); 
-         window.dispatchEvent(new HashChangeEvent("hashchange")); 
-     }); 
- } 
- /* ============================================================ 
-       WORKFLOW RUNS CRUD 
-       ============================================================ */ 
- function openRunForm(run, workflowId) { 
-     const isEdit = !!run; 
-     const r = run || {}; 
-     const wf = workflowId ? D.workflows.find(w => w.id === workflowId) : null; 
-     const stages = wf ? wf.stages.sort((a, b) => a.order - b.order).map(s => s.name) : []; 
-     const body = `<form id="run-form" class="modal-form"> 
-         ${field("Title", "title", "text", r.title, { required: true, placeholder: "Run title" })} 
-         ${field("Description", "description", "textarea", r.description, { rows: 3 })} 
-         ${!isEdit ? field("Workflow", "workflowId", "select", workflowId || r.workflowId, { required: true, placeholder: "Select workflow", options: workflowOptions() }) : ""} 
-         ${stages.length ? field("Current Stage", "currentStage", "select", r.currentStage, { required: true, options: stages }) : ""} 
-         ${field("Status", "status", "select", r.status || "In Progress", { required: true, options: ["In Progress", "On Hold", "Completed"] })} 
-         ${field("Priority", "priority", "select", r.priority || "Medium", { required: true, options: ["High", "Medium", "Low"] })} 
-         ${field("Requested By", "requestedBy", "select", r.requestedBy, { required: true, placeholder: "Select role", options: roleOptions() })} 
-         ${field("Assigned To", "assignedTo", "select", r.assignedTo, { required: true, placeholder: "Select role", options: roleOptions() })} 
-         ${field("Start Date", "startDate", "date", r.startDate)} 
-         ${field("Target Date", "targetDate", "date", r.targetDate)} 
-     </form>`; 
-     openModal( 
-         isEdit ? "Edit Workflow Run" : "Start New Run", 
-         body, 
-         `<button class="btn btn--ghost" id="btn-cancel">Cancel</button> 
-           <button class="btn btn--primary" id="btn-save">${isEdit ? "Save Changes" : "Start Run"}</button>` 
-     ); 
-     // If adding and no workflowId, populate stages on workflow change 
-     if (!isEdit && !workflowId) { 
-         const wfSelect = document.getElementById("field-workflowId"); 
-         if (wfSelect) { 
-             wfSelect.addEventListener("change", () => { 
-                 const selWf = D.workflows.find(w => w.id === wfSelect.value); 
-                 const stageField = document.getElementById("field-currentStage"); 
-                 if (stageField && selWf) { 
-                     const st = selWf.stages.sort((a, b) => a.order - b.order); 
-                     stageField.innerHTML = st.map(s => `<option>${s.name}</option>`).join(""); 
-                 } 
-             }); 
-         } 
-     } 
-     document.getElementById("btn-cancel").addEventListener("click", closeModal); 
-     document.getElementById("btn-save").addEventListener("click", () => { 
-         const form = document.getElementById("run-form"); 
-         if (!form.checkValidity()) { form.reportValidity(); return; } 
-         const fields = ["title", "description", "currentStage", "status", "priority", "requestedBy", "assignedTo", "startDate", "targetDate"]; 
- 
-      if (!isEdit) fields.push("workflowId"); 
-         const data = getFormData(fields); 
-         if (isEdit) { 
-             Object.assign(run, data); 
-             showToast("Workflow run updated"); 
-         } else { 
-             data.id = nextId("RUN", D.workflowRuns); 
-             data.linkedDocs = []; 
-             data.linkedTemplates = []; 
-             data.notes = ""; 
-             D.workflowRuns.push(data); 
-             showToast("Workflow run started"); 
-         } 
-         closeModal(); 
-         window.dispatchEvent(new HashChangeEvent("hashchange")); 
-     }); 
- } 
- function deleteRun(id) { 
-     const idx = D.workflowRuns.findIndex(r => r.id === id); 
-     if (idx >= 0) { 
-         const name = D.workflowRuns[idx].title; 
-         confirmDelete("Workflow Run", name, () => { 
-             D.workflowRuns.splice(idx, 1); 
-             showToast("Workflow run deleted"); 
-             location.hash = "workflows"; 
-         }); 
-     } 
- } 
- /* ============================================================ 
-       TEMPLATES CRUD 
-       ============================================================ */ 
- function openTemplateForm(tmpl) { 
-     const isEdit = !!tmpl; 
-     const t = tmpl || {}; 
-     const body = `<form id="template-form" class="modal-form"> 
-         ${field("Name", "name", "text", t.name, { required: true, placeholder: "Template name" })} 
-         ${field("Type", "type", "select", t.type || "Template", { required: true, options: ["Template", "Form", "Checklist"] })} 
-         ${field("Description", "description", "textarea", t.description, { required: true, rows: 3 })} 
-         ${field("Owner", "owner", "select", t.owner, { required: true, placeholder: "Select owner", options: roleOptions() })} 
-         ${field("Audience", "audience", "text", t.audience, { placeholder: "Target audience" })} 
-         ${field("Status", "status", "select", t.status || "Active", { required: true, options: ["Active", "Draft", "Under Review", "Archived"] })} 
-         ${field("Version", "version", "text", t.version || "1.0", { placeholder: "e.g., 1.0" })} 
-     </form>`; 
-     openModal( 
-         isEdit ? "Edit Template" : "Add Template", 
-         body, 
-         `<button class="btn btn--ghost" id="btn-cancel">Cancel</button> 
-           <button class="btn btn--primary" id="btn-save">${isEdit ? "Save Changes" : "Add Template"}</button>` 
-     ); 
-     document.getElementById("btn-cancel").addEventListener("click", closeModal); 
-     document.getElementById("btn-save").addEventListener("click", () => { 
-         const form = document.getElementById("template-form"); 
-         if (!form.checkValidity()) { form.reportValidity(); return; } 
-         const data = getFormData(["name", "type", "description", "owner", "audience", "status", "version"]); 
-         if (isEdit) { 
-             Object.assign(tmpl, data); 
-             showToast("Template updated successfully"); 
-         } else { 
-             data.id = nextId("TMPL", D.templates); 
-             data.linkedWorkflows = []; 
-             data.linkedDocs = []; 
-             D.templates.push(data); 
-             showToast("Template added successfully"); 
-         } 
-         closeModal(); 
-         window.dispatchEvent(new HashChangeEvent("hashchange")); 
-     }); 
- } 
- function deleteTemplate(id) { 
- 
-  const idx = D.templates.findIndex(t => t.id === id); 
-     if (idx >= 0) { 
-         const name = D.templates[idx].name; 
-         confirmDelete("Template", name, () => { 
-             D.templates.splice(idx, 1); 
-             showToast("Template deleted"); 
-             location.hash = "templates"; 
-         }); 
-     } 
- } 
- /* ============================================================ 
-       LEARNING ASSETS CRUD 
-       ============================================================ */ 
- function openLearningForm(asset) { 
-     const isEdit = !!asset; 
-     const a = asset || {}; 
-     const body = `<form id="learning-form" class="modal-form"> 
-         ${field("Title", "title", "text", a.title, { required: true, placeholder: "Learning asset title" })} 
-         ${field("Type", "type", "select", a.type || "Course", { required: true, options: ["Course", "Microlearning", "Job Aid"] })} 
-         ${field("Description", "description", "textarea", a.description, { required: true, rows: 3 })} 
-         ${field("Required / Optional", "requiredOrOptional", "select", a.requiredOrOptional || "Optional", { required: true, options: ["Required", "Optional"] })} 
-         ${field("Estimated Duration", "estimatedDuration", "text", a.estimatedDuration, { placeholder: "e.g., 45 minutes" })} 
-         ${field("Owner", "owner", "select", a.owner, { required: true, placeholder: "Select owner", options: roleOptions() })} 
-         ${field("Status", "status", "select", a.status || "Active", { required: true, options: ["Active", "Draft", "Under Review", "Archived"] })} 
-     </form>`; 
-     openModal( 
- 
-      isEdit ? "Edit Learning Asset" : "Add Learning Asset", 
-         body, 
-         `<button class="btn btn--ghost" id="btn-cancel">Cancel</button> 
-           <button class="btn btn--primary" id="btn-save">${isEdit ? "Save Changes" : "Add Learning Asset"}</button>` 
-     ); 
-     document.getElementById("btn-cancel").addEventListener("click", closeModal); 
-     document.getElementById("btn-save").addEventListener("click", () => { 
-         const form = document.getElementById("learning-form"); 
-         if (!form.checkValidity()) { form.reportValidity(); return; } 
-         const data = getFormData(["title", "type", "description", "requiredOrOptional", "estimatedDuration", "owner", "status"]); 
-         if (isEdit) { 
-             Object.assign(asset, data); 
-             showToast("Learning asset updated successfully"); 
-         } else { 
-             data.id = nextId("LA", D.learningAssets); 
-             data.audience = []; 
-             data.sourceDocs = []; 
-             data.linkedWorkflows = []; 
-             data.linkedTemplates = []; 
-             D.learningAssets.push(data); 
-         
-  showToast("Learning asset added successfully"); 
-         } 
-         closeModal(); 
-         window.dispatchEvent(new HashChangeEvent("hashchange")); 
-     }); 
- } 
- function deleteLearningAsset(id) { 
-     const idx = D.learningAssets.findIndex(a => a.id === id); 
-     if (idx >= 0) { 
-         const name = D.learningAssets[idx].title; 
-         confirmDelete("Learning Asset", name, () => { 
-             D.learningAssets.splice(idx, 1); 
-             showToast("Learning asset deleted"); 
-             location.hash = "learning"; 
-         }); 
-     } 
-  } 
- /* ============================================================ 
-       ROLES CRUD 
-       ============================================================ */ 
- function openRoleForm(role) { 
-     const isEdit = !!role; 
-     const r = role || {}; 
-     const body = `<form id="role-form" class="modal-form"> 
-         ${field("Name", "name", "text", r.name, { required: true, placeholder: "Role name" })} 
-         ${field("Type", "type", "select", r.type || "Contributor", { required: true, options: ["Program Owner", "Approver", "Requester", "Contributor", "Analyst"] })} 
-         ${field("Purpose", "purpose", "textarea", r.purpose, { required: true, rows: 3 })} 
-         ${field("Active", "active", "checkbox", r.active !== false, { checkLabel: "Role is currently active" })} 
-     </form>`; 
-     openModal( 
-         isEdit ? "Edit Role" : "Add Role", 
-         body, 
-         `<button class="btn btn--ghost" id="btn-cancel">Cancel</button> 
-           <button class="btn btn--primary" id="btn-save">${isEdit ? "Save Changes" : "Add Role"}</button>` 
-     ); 
-     document.getElementById("btn-cancel").addEventListener("click", closeModal); 
-     document.getElementById("btn-save").addEventListener("click", () => { 
-         const form = document.getElementById("role-form"); 
-         if (!form.checkValidity()) { form.reportValidity(); return; } 
-         const data = getFormData(["name", "type", "purpose", "active"]); 
-         if (isEdit) { 
-             Object.assign(role, data); 
-             showToast("Role updated successfully"); 
-         } else { 
-             data.id = nextId("ROLE", D.roles); 
-     
-      data.responsibilities = []; 
-             data.decisionAuthority = []; 
-             data.reviewScope = []; 
-             D.roles.push(data); 
-             showToast("Role added successfully"); 
-         } 
-         closeModal(); 
-         window.dispatchEvent(new HashChangeEvent("hashchange")); 
-     }); 
- } 
- function deleteRole(id) { 
-     const idx = D.roles.findIndex(r => r.id === id); 
-     if (idx >= 0) { 
-         const name = D.roles[idx].name; 
-         confirmDelete("Role", name, () => { 
-             D.roles.splice(idx, 1); 
-             showToast("Role deleted"); 
-             location.hash = "roles"; 
-         }); 
-     } 
- } 
- /* ── Expose API ─────────────────────────────────── */ 
- window.CRUD = { 
-     openActionForm, deleteAction, 
-     openRiskForm, deleteRisk, 
-     openDocumentForm, deleteDocument, 
-     openKPIForm, 
-     openRunForm, deleteRun, 
-     openTemplateForm, deleteTemplate, 
-     openLearningForm, deleteLearningAsset, 
-     openRoleForm, deleteRole, 
-     showToast 
- }; })();
+/* ============================================================
+   One DSD Equity Program — Generic CRUD Engine v2.0
+   Schema-driven: one form builder, one delete handler.
+   All mutations call STORE.save() and re-render current route.
+   ============================================================ */
+(function () {
+  "use strict";
+
+  const D = () => window.APP_DATA;
+
+  /* ── ID Generation ─────────────────────────────────────────── */
+  function nextId(collection, prefix) {
+    const existing = (D()[collection] || []).map(e => e.id).filter(id => id && id.startsWith(prefix + "-"));
+    if (!existing.length) return `${prefix}-001`;
+    const nums = existing.map(id => parseInt(id.split("-").pop(), 10)).filter(n => !isNaN(n));
+    const next  = Math.max(...nums) + 1;
+    return `${prefix}-${String(next).padStart(3, "0")}`;
+  }
+
+  /* ── Toast ─────────────────────────────────────────────────── */
+  function toast(msg, type) {
+    const t     = document.createElement("div");
+    t.className = `toast toast--${type || "success"}`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.classList.add("toast--visible"));
+    setTimeout(() => { t.classList.remove("toast--visible"); setTimeout(() => t.remove(), 300); }, 3000);
+  }
+
+  /* ── Modal ─────────────────────────────────────────────────── */
+  let _afterClose = null;
+  function showModal(title, bodyHTML, footerHTML, afterClose) {
+    _afterClose = afterClose || null;
+    let overlay = document.getElementById("crud-overlay");
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.id = "crud-overlay";
+      overlay.className = "modal-overlay";
+      document.body.appendChild(overlay);
+    }
+    overlay.innerHTML = `
+      <div class="modal" role="dialog" aria-modal="true" aria-label="${title}">
+        <div class="modal__header">
+          <h2 class="modal__title">${title}</h2>
+          <button class="modal__close btn btn--icon" id="modal-close" aria-label="Close">
+            <i data-lucide="x" class="icon-sm"></i>
+          </button>
+        </div>
+        <div class="modal__body">${bodyHTML}</div>
+        <div class="modal__footer">${footerHTML}</div>
+      </div>`;
+    overlay.classList.add("modal-overlay--visible");
+    document.getElementById("modal-close").addEventListener("click", closeModal);
+    overlay.addEventListener("click", e => { if (e.target === overlay) closeModal(); });
+    document.addEventListener("keydown", handleEsc);
+    if (typeof lucide !== "undefined") lucide.createIcons();
+  }
+  function handleEsc(e) { if (e.key === "Escape") closeModal(); }
+  function closeModal() {
+    const overlay = document.getElementById("crud-overlay");
+    if (overlay) overlay.classList.remove("modal-overlay--visible");
+    document.removeEventListener("keydown", handleEsc);
+    if (_afterClose) { _afterClose(); _afterClose = null; }
+  }
+
+  /* ── Field Builders ────────────────────────────────────────── */
+  function buildField(field, value) {
+    const id  = `field-${field.key}`;
+    const val = (value !== undefined && value !== null) ? value : (field.default || "");
+    const req = field.required ? " required" : "";
+
+    if (field.type === "textarea") {
+      return `<div class="form-group">
+        <label class="form-label" for="${id}">${field.label}${field.required ? " *" : ""}</label>
+        <textarea id="${id}" name="${field.key}" class="form-input form-textarea"${req}>${val}</textarea>
+      </div>`;
+    }
+    if (field.type === "select") {
+      const opts = typeof field.options === "function" ? field.options() : (field.options || []);
+      const optHTML = opts.map(o => {
+        const v = typeof o === "object" ? o.value : o;
+        const l = typeof o === "object" ? (o.label || o.value) : o;
+        return `<option value="${v}"${String(val) === String(v) ? " selected" : ""}>${l}</option>`;
+      }).join("");
+      return `<div class="form-group">
+        <label class="form-label" for="${id}">${field.label}${field.required ? " *" : ""}</label>
+        <select id="${id}" name="${field.key}" class="form-input form-select"${req}>
+          <option value="">— Select —</option>${optHTML}
+        </select>
+      </div>`;
+    }
+    if (field.type === "multiselect") {
+      const opts    = typeof field.options === "function" ? field.options() : (field.options || []);
+      const current = Array.isArray(val) ? val : [];
+      const optHTML = opts.map(o => {
+        const v = typeof o === "object" ? o.value : o;
+        const l = typeof o === "object" ? (o.label || o.value) : o;
+        return `<label class="form-checkbox"><input type="checkbox" name="${field.key}[]" value="${v}"${current.includes(v) ? " checked" : ""}><span>${l}</span></label>`;
+      }).join("");
+      return `<div class="form-group">
+        <label class="form-label">${field.label}</label>
+        <div class="form-checkgroup">${optHTML}</div>
+      </div>`;
+    }
+    if (field.type === "number") {
+      return `<div class="form-group">
+        <label class="form-label" for="${id}">${field.label}${field.required ? " *" : ""}</label>
+        <input type="number" id="${id}" name="${field.key}" class="form-input" value="${val}" step="${field.step || "any"}"${req}>
+      </div>`;
+    }
+    return `<div class="form-group">
+      <label class="form-label" for="${id}">${field.label}${field.required ? " *" : ""}</label>
+      <input type="${field.type || "text"}" id="${id}" name="${field.key}" class="form-input" value="${val}"${req}>
+    </div>`;
+  }
+
+  function collectForm(form, schema) {
+    const result = {};
+    schema.fields.forEach(field => {
+      if (field.type === "multiselect") {
+        result[field.key] = [...form.querySelectorAll(`[name="${field.key}[]"]:checked`)].map(el => el.value);
+      } else {
+        const el = form.querySelector(`[name="${field.key}"]`);
+        if (!el) return;
+        const raw = el.value.trim();
+        result[field.key] = (field.type === "number" && raw !== "") ? parseFloat(raw) : raw;
+      }
+    });
+    return result;
+  }
+
+  function validateForm(data, schema) {
+    const errors = [];
+    schema.fields.filter(f => f.required).forEach(f => {
+      const v = data[f.key];
+      if (v === undefined || v === null || v === "" || (Array.isArray(v) && v.length === 0))
+        errors.push(`${f.label} is required`);
+    });
+    return errors;
+  }
+
+  /* ── Entity Schemas ────────────────────────────────────────── */
+  const SCHEMAS = {
+
+    action: {
+      collection: "actions", idPrefix: "ACT", label: "Program Action",
+      fields: [
+        { key: "title",           label: "Title",           type: "text",        required: true },
+        { key: "description",     label: "Description",     type: "textarea"                    },
+        { key: "owner",           label: "Owner",           type: "select",      required: true,
+          options: () => D().roles.map(r => ({ value: r.id, label: r.name })) },
+        { key: "status",          label: "Status",          type: "select",      required: true,
+          options: ["On Track","At Risk","Overdue","Completed"] },
+        { key: "priority",        label: "Priority",        type: "select",      required: true,
+          options: ["High","Medium","Low"] },
+        { key: "dueDate",         label: "Due Date",        type: "date"                        },
+        { key: "linkedKPIs",      label: "Linked KPIs",     type: "multiselect",
+          options: () => D().kpis.map(k => ({ value: k.id, label: k.name })) },
+        { key: "linkedWorkflows", label: "Linked Workflows",type: "multiselect",
+          options: () => D().workflows.map(w => ({ value: w.id, label: w.name })) }
+      ]
+    },
+
+    risk: {
+      collection: "risks", idPrefix: "RISK", label: "Risk",
+      fields: [
+        { key: "title",          label: "Title",           type: "text",        required: true },
+        { key: "description",    label: "Description",     type: "textarea"                    },
+        { key: "severity",       label: "Severity",        type: "select",      required: true,
+          options: ["High","Medium","Low"] },
+        { key: "likelihood",     label: "Likelihood",      type: "select",      required: true,
+          options: ["High","Medium","Low"] },
+        { key: "owner",          label: "Owner",           type: "select",      required: true,
+          options: () => D().roles.map(r => ({ value: r.id, label: r.name })) },
+        { key: "status",         label: "Status",          type: "select",      required: true,
+          options: ["Active","Monitoring","Mitigated","Closed"] },
+        { key: "mitigationPlan", label: "Mitigation Plan", type: "textarea"                    },
+        { key: "linkedKPIs",     label: "Linked KPIs",     type: "multiselect",
+          options: () => D().kpis.map(k => ({ value: k.id, label: k.name })) },
+        { key: "linkedWorkflows",label: "Linked Workflows",type: "multiselect",
+          options: () => D().workflows.map(w => ({ value: w.id, label: w.name })) }
+      ]
+    },
+
+    document: {
+      collection: "documents", idPrefix: "DOC", label: "Document",
+      fields: [
+        { key: "title",              label: "Title",               type: "text",     required: true },
+        { key: "shortTitle",         label: "Short Title",         type: "text"                     },
+        { key: "batch",              label: "Batch",               type: "select",   required: true,
+          options: ["Governing Authority","Institutional Context","Equity Analysis and Engagement",
+                    "Accessibility and Language Access","Workforce Equity","Service System Operations",
+                    "Educational and Reusable Resources","One DSD Program Core Internal"] },
+        { key: "authorityType",      label: "Authority Type",      type: "select",   required: true,
+          options: ["Law / Regulation","Federal Guidance","Statewide Policy","DHS Enterprise Policy",
+                    "ADSA / Division Guidance","Program Governance","Operational Procedures","Educational"] },
+        { key: "authorityRank",      label: "Authority Rank (1–8)",type: "number",   required: true },
+        { key: "sourceType",         label: "Source Type",         type: "select",   required: true,
+          options: ["Public","Internal"] },
+        { key: "dataClassification", label: "Data Classification", type: "select",   required: true,
+          options: ["Public","Internal","Restricted"] },
+        { key: "sourceOrg",          label: "Source Organization", type: "text"                     },
+        { key: "documentType",       label: "Document Type",       type: "text"                     },
+        { key: "format",             label: "Format",              type: "text"                     },
+        { key: "audience",           label: "Audience",            type: "text"                     },
+        { key: "owner",              label: "Owner",               type: "select",   required: true,
+          options: () => D().roles.map(r => ({ value: r.id, label: r.name })) },
+        { key: "effectiveDate",      label: "Effective Date",      type: "date"                     },
+        { key: "reviewDate",         label: "Review Date",         type: "date",     required: true  },
+        { key: "status",             label: "Status",              type: "select",   required: true,
+          options: ["Active","Under Review","Archived","Superseded"] },
+        { key: "purpose",            label: "Purpose",             type: "textarea", required: true  },
+        { key: "notes",              label: "Notes",               type: "textarea"                  }
+      ]
+    },
+
+    kpi: {
+      collection: "kpis", idPrefix: "KPI", label: "KPI",
+      fields: [
+        { key: "name",           label: "Name",              type: "text",     required: true },
+        { key: "dashboardGroup", label: "Dashboard Group",   type: "select",   required: true,
+          options: ["Demand & Throughput","Timeliness","Quality & Follow-Through","Learning & Capacity","Accountability & Progress"] },
+        { key: "unit",           label: "Unit",              type: "select",   required: true,
+          options: ["count","days","percentage","ratio"] },
+        { key: "definition",     label: "Definition",        type: "textarea", required: true },
+        { key: "target",         label: "Target Value",      type: "number"                   },
+        { key: "currentValue",   label: "Current Value",     type: "number"                   },
+        { key: "previousValue",  label: "Previous Value",    type: "number"                   },
+        { key: "trend",          label: "Trend",             type: "select",
+          options: ["up","down","flat"] },
+        { key: "dataQuality",    label: "Data Quality",      type: "select",   required: true,
+          options: ["High","Medium","Low"] },
+        { key: "owner",          label: "Owner",             type: "select",   required: true,
+          options: () => D().roles.map(r => ({ value: r.id, label: r.name })) },
+        { key: "status",         label: "Status",            type: "select",   required: true,
+          options: ["Active","Inactive"] }
+      ]
+    },
+
+    run: {
+      collection: "workflowRuns", idPrefix: "RUN", label: "Workflow Run",
+      fields: [
+        { key: "title",       label: "Title",        type: "text",    required: true },
+        { key: "workflowId",  label: "Workflow",     type: "select",  required: true,
+          options: () => D().workflows.map(w => ({ value: w.id, label: w.name })) },
+        { key: "description", label: "Description",  type: "textarea"                },
+        { key: "requestedBy", label: "Requested By", type: "select",  required: true,
+          options: () => D().roles.map(r => ({ value: r.id, label: r.name })) },
+        { key: "assignedTo",  label: "Assigned To",  type: "select",  required: true,
+          options: () => D().roles.map(r => ({ value: r.id, label: r.name })) },
+        { key: "priority",    label: "Priority",     type: "select",  required: true,
+          options: ["High","Medium","Low"] },
+        { key: "status",      label: "Status",       type: "select",  required: true,
+          options: ["In Progress","On Hold","Completed","Cancelled"] },
+        { key: "startDate",   label: "Start Date",   type: "date"                    },
+        { key: "targetDate",  label: "Target Date",  type: "date"                    },
+        { key: "notes",       label: "Notes",        type: "textarea"                }
+      ]
+    },
+
+    template: {
+      collection: "templates", idPrefix: "TMP", label: "Template",
+      fields: [
+        { key: "name",            label: "Name",             type: "text",        required: true },
+        { key: "type",            label: "Type",             type: "select",      required: true,
+          options: ["Form","Template","Checklist","Job Aid","Report"] },
+        { key: "description",     label: "Description",      type: "textarea",    required: true },
+        { key: "owner",           label: "Owner",            type: "select",      required: true,
+          options: () => D().roles.map(r => ({ value: r.id, label: r.name })) },
+        { key: "audience",        label: "Audience",         type: "text"                        },
+        { key: "status",          label: "Status",           type: "select",      required: true,
+          options: ["Active","Draft","Archived"] },
+        { key: "version",         label: "Version",          type: "text",        default: "1.0"  },
+        { key: "linkedWorkflows", label: "Linked Workflows", type: "multiselect",
+          options: () => D().workflows.map(w => ({ value: w.id, label: w.name })) }
+      ]
+    },
+
+    learningAsset: {
+      collection: "learningAssets", idPrefix: "LA", label: "Learning Asset",
+      fields: [
+        { key: "title",             label: "Title",              type: "text",        required: true },
+        { key: "type",              label: "Type",               type: "select",      required: true,
+          options: ["Course","Microlearning","Job Aid","Video","Workshop"] },
+        { key: "description",       label: "Description",        type: "textarea",    required: true },
+        { key: "owner",             label: "Owner",              type: "select",      required: true,
+          options: () => D().roles.map(r => ({ value: r.id, label: r.name })) },
+        { key: "requiredOrOptional",label: "Required / Optional",type: "select",      required: true,
+          options: ["Required","Optional"] },
+        { key: "estimatedDuration", label: "Estimated Duration", type: "text"                       },
+        { key: "status",            label: "Status",             type: "select",      required: true,
+          options: ["Active","In Development","Archived"] },
+        { key: "linkedWorkflows",   label: "Linked Workflows",   type: "multiselect",
+          options: () => D().workflows.map(w => ({ value: w.id, label: w.name })) }
+      ]
+    },
+
+    role: {
+      collection: "roles", idPrefix: "ROLE", label: "Role",
+      fields: [
+        { key: "name",    label: "Role Name", type: "text",     required: true },
+        { key: "type",    label: "Type",      type: "select",   required: true,
+          options: ["Program Owner","Approver","Requester","Contributor","Analyst"] },
+        { key: "purpose", label: "Purpose",   type: "textarea", required: true },
+        { key: "active",  label: "Active",    type: "select",   required: true,
+          options: [{ value: "true", label: "Yes" },{ value: "false", label: "No" }] }
+      ]
+    }
+  };
+
+  /* ── Generic Form Open ─────────────────────────────────────── */
+  function openEntityForm(type, existing) {
+    const schema = SCHEMAS[type];
+    if (!schema) { console.error("Unknown entity type:", type); return; }
+    const isEdit   = !!existing;
+    const title    = `${isEdit ? "Edit" : "Add"} ${schema.label}`;
+    const bodyHTML = schema.fields.map(f => buildField(f, isEdit ? existing[f.key] : undefined)).join("");
+    const footer   = `<button class="btn btn--ghost" id="modal-cancel">Cancel</button>
+      <button class="btn btn--primary" id="modal-save">Save ${schema.label}</button>`;
+
+    showModal(title, bodyHTML, footer, () => { if (window.route) window.route(); });
+
+    document.getElementById("modal-cancel").addEventListener("click", closeModal);
+    document.getElementById("modal-save").addEventListener("click", () => {
+      const form   = document.querySelector("#crud-overlay .modal__body");
+      const data   = collectForm(form, schema);
+      const errors = validateForm(data, schema);
+      if (errors.length) { alert("Please fix:\n\u2022 " + errors.join("\n\u2022 ")); return; }
+
+      const collection = D()[schema.collection];
+      if (isEdit) {
+        Object.assign(existing, data);
+        toast(`${schema.label} updated`, "success");
+      } else {
+        data.id = nextId(schema.collection, schema.idPrefix);
+        collection.push(data);
+        toast(`${schema.label} added`, "success");
+      }
+      if (type === "role") {
+        const target = collection.find(e => e.id === (isEdit ? existing.id : data.id));
+        if (target) target.active = (target.active === "true" || target.active === true);
+      }
+      STORE.save();
+      closeModal();
+    });
+  }
+
+  /* ── Generic Delete ────────────────────────────────────────── */
+  function deleteEntity(type, id) {
+    const schema = SCHEMAS[type];
+    if (!schema) return;
+    if (!confirm(`Delete this ${schema.label}? This cannot be undone.`)) return;
+    const col = D()[schema.collection];
+    const idx = col.findIndex(e => e.id === id);
+    if (idx === -1) { toast("Item not found", "error"); return; }
+    col.splice(idx, 1);
+    STORE.save();
+    toast(`${schema.label} deleted`, "success");
+    if (window.route) window.route();
+  }
+
+  /* ── Stage Advancement (with Decision Log) ─────────────────── */
+  function advanceRunStage(runId) {
+    const run = D().workflowRuns.find(r => r.id === runId);
+    if (!run) return;
+    const wf     = D().workflows.find(w => w.id === run.workflowId);
+    if (!wf) return;
+    const stages  = [...wf.stages].sort((a, b) => a.order - b.order);
+    const current = stages.findIndex(s => s.name === run.currentStage);
+    if (current === -1 || current >= stages.length - 1) {
+      toast("Already at final stage", "info"); return;
+    }
+    const nextStage      = stages[current + 1];
+    const l2             = window.AGENTS ? window.AGENTS.sniff.L2(run, "workflow_run") : { alerts: [] };
+    const criticalAlerts = l2.alerts.filter(a => a.level === "Critical");
+    if (criticalAlerts.length) {
+      const ok = confirm(
+        `Critical checks before advancing:\n\n${criticalAlerts.map(a => "\u2022 " + a.msg).join("\n")}\n\nAdvance anyway?`
+      );
+      if (!ok) return;
+    }
+    const log = {
+      id: nextId("decisionLogs", "DL"),
+      entityType: "WorkflowRun", entityId: runId,
+      action: "STAGE_ADVANCED",
+      fromStage: run.currentStage, toStage: nextStage.name,
+      performedBy: window.AUTH ? (window.AUTH.getUser()?.email || "system") : "system",
+      performedAt: new Date().toISOString(),
+      l2AlertCount: l2.alerts.length,
+      overrideApplied: criticalAlerts.length > 0,
+      notes: ""
+    };
+    (D().decisionLogs = D().decisionLogs || []).push(log);
+    run.currentStage = nextStage.name;
+    if (current + 1 === stages.length - 1) run.status = "Completed";
+    STORE.save();
+    toast(`Advanced to: ${nextStage.name}`, "success");
+    if (window.route) window.route();
+  }
+
+  /* ── Public API ────────────────────────────────────────────── */
+  window.CRUD = {
+    open:         openEntityForm,
+    delete:       deleteEntity,
+    advanceStage: advanceRunStage,
+    toast,
+    // Named aliases for backward compatibility
+    openActionForm:      (e)     => openEntityForm("action", e),
+    openRiskForm:        (e)     => openEntityForm("risk", e),
+    openDocumentForm:    (e)     => openEntityForm("document", e),
+    openKPIForm:         (e)     => openEntityForm("kpi", e),
+    openRunForm:         (e)     => openEntityForm("run", e),
+    openTemplateForm:    (e)     => openEntityForm("template", e),
+    openLearningForm:    (e)     => openEntityForm("learningAsset", e),
+    openRoleForm:        (e)     => openEntityForm("role", e),
+    deleteAction:        (id)    => deleteEntity("action", id),
+    deleteRisk:          (id)    => deleteEntity("risk", id),
+    deleteDocument:      (id)    => deleteEntity("document", id),
+    deleteRun:           (id)    => deleteEntity("run", id),
+    deleteTemplate:      (id)    => deleteEntity("template", id),
+    deleteLearningAsset: (id)    => deleteEntity("learningAsset", id),
+    deleteRole:          (id)    => deleteEntity("role", id)
+  };
+})();
