@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { EditableText } from "@/components/EditableText";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -251,9 +252,11 @@ export default function AgentsPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Equity Agents</h1>
+        <h1 className="text-2xl font-bold">
+          <EditableText id="agents.title" defaultValue="Equity Agents" />
+        </h1>
         <p className="text-muted-foreground mt-1">
-          {AGENTS.length} specialized agents · All governed by Primary Directive · 39 Meta-Skills applied universally
+          <EditableText id="agents.subtitle" defaultValue={`${AGENTS.length} specialized agents · All governed by Primary Directive · 39 Meta-Skills applied universally`} />
         </p>
       </div>
 
@@ -319,7 +322,9 @@ export default function AgentsPage() {
                     style={{ backgroundColor: `${agent.color}15` }}
                   />
                   <div>
-                    <CardTitle className="text-sm font-semibold leading-tight">{agent.name}</CardTitle>
+                    <CardTitle className="text-sm font-semibold leading-tight">
+                      <EditableText id={`agent.${agent.id}.name`} defaultValue={agent.name} />
+                    </CardTitle>
                     <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${categoryColors[agent.category]}`}>
                       {categoryLabels[agent.category]}
                     </span>
@@ -333,9 +338,7 @@ export default function AgentsPage() {
             </CardHeader>
 
             <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
-                {agent.description}
-              </p>
+              <EditableText id={`agent.${agent.id}.desc`} defaultValue={agent.description} multiline className="text-sm text-muted-foreground leading-relaxed line-clamp-3" />
 
               {/* Capabilities */}
               <div className="flex flex-wrap gap-1">

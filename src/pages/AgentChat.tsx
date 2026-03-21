@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Paperclip } from "lucide-react";
+import { EditableText } from "@/components/EditableText";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -417,8 +418,12 @@ export default function AgentChat() {
 
           <div className="flex items-center gap-3 flex-1">
             <div>
-              <h2 className="text-sm font-semibold">{agent.name}</h2>
-              <p className="text-xs text-muted-foreground hidden sm:block">{agent.purpose.slice(0, 80)}...</p>
+              <h2 className="text-sm font-semibold">
+                <EditableText id={`chat.${agentId}.name`} defaultValue={agent.name} />
+              </h2>
+              <p className="text-xs text-muted-foreground hidden sm:block">
+                <EditableText id={`chat.${agentId}.purpose`} defaultValue={agent.purpose.slice(0, 80) + "..."} />
+              </p>
             </div>
           </div>
 

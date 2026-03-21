@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { EditableText } from "@/components/EditableText";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -85,19 +86,22 @@ export default function Dashboard() {
     <div className="p-6 space-y-6">
       {/* Page header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Equity Operations Dashboard</h1>
+        <h1 className="text-2xl font-bold text-foreground">
+          <EditableText id="dashboard.title" defaultValue="Equity Operations Dashboard" />
+        </h1>
         <p className="text-muted-foreground mt-1">
-          One DSD Equity and Inclusion Platform · Minnesota Department of Human Services
+          <EditableText id="dashboard.subtitle" defaultValue="One DSD Equity and Inclusion Platform · Minnesota Department of Human Services" />
         </p>
       </div>
 
       {/* Primary Directive banner */}
       <div className="bg-[#003865] text-white rounded-lg p-4 flex items-start gap-3">
         <div>
-          <p className="text-sm font-medium">Primary Directive Active</p>
+          <p className="text-sm font-medium">
+            <EditableText id="dashboard.directive.title" defaultValue="Primary Directive Active" className="text-white" />
+          </p>
           <p className="text-xs text-white/70 mt-0.5">
-            "Every agent, every process, every output must multiply the Consultant's capacity, never divide it."
-            — 39 Meta-Skills · 6 Domains · 14 Agents · Sniff Check L1/L2/L3 Active
+            <EditableText id="dashboard.directive.body" defaultValue={"\"Every agent, every process, every output must multiply the Consultant's capacity, never divide it.\" — 39 Meta-Skills · 6 Domains · 14 Agents · Sniff Check L1/L2/L3 Active"} className="text-white/70" />
           </p>
         </div>
       </div>
@@ -107,52 +111,52 @@ export default function Dashboard() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground font-medium">Active Waivers</span>
+              <span className="text-sm text-muted-foreground font-medium"><EditableText id="kpi.waivers.label" defaultValue="Active Waivers" /></span>
             </div>
-            <div className="text-3xl font-bold text-foreground">47,284</div>
+            <div className="text-3xl font-bold text-foreground"><EditableText id="kpi.waivers.value" defaultValue="47,284" /></div>
             <div className="flex items-center gap-1.5 mt-1">
-              <span className="text-xs text-green-600 font-medium">+2.3% from last quarter</span>
+              <span className="text-xs text-green-600 font-medium"><EditableText id="kpi.waivers.change" defaultValue="+2.3% from last quarter" /></span>
             </div>
-            <div className="mt-2 text-xs text-muted-foreground">CADI · DD · BI · EW · AC</div>
+            <div className="mt-2 text-xs text-muted-foreground"><EditableText id="kpi.waivers.note" defaultValue="CADI · DD · BI · EW · AC" /></div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground font-medium">Waitlist (Total)</span>
+              <span className="text-sm text-muted-foreground font-medium"><EditableText id="kpi.waitlist.label" defaultValue="Waitlist (Total)" /></span>
             </div>
-            <div className="text-3xl font-bold text-foreground">4,480</div>
+            <div className="text-3xl font-bold text-foreground"><EditableText id="kpi.waitlist.value" defaultValue="4,480" /></div>
             <div className="flex items-center gap-1.5 mt-1">
-              <span className="text-xs text-green-600 font-medium">-7.1% from last quarter</span>
+              <span className="text-xs text-green-600 font-medium"><EditableText id="kpi.waitlist.change" defaultValue="-7.1% from last quarter" /></span>
             </div>
-            <div className="mt-2 text-xs text-muted-foreground">45% BIPOC community members</div>
+            <div className="mt-2 text-xs text-muted-foreground"><EditableText id="kpi.waitlist.note" defaultValue="45% BIPOC community members" /></div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground font-medium">Employment Rate</span>
+              <span className="text-sm text-muted-foreground font-medium"><EditableText id="kpi.employment.label" defaultValue="Employment Rate" /></span>
             </div>
-            <div className="text-3xl font-bold text-foreground">31.2%</div>
+            <div className="text-3xl font-bold text-foreground"><EditableText id="kpi.employment.value" defaultValue="31.2%" /></div>
             <div className="flex items-center gap-1.5 mt-1">
-              <span className="text-xs text-amber-600 font-medium">+1.8% — gap remains</span>
+              <span className="text-xs text-amber-600 font-medium"><EditableText id="kpi.employment.change" defaultValue="+1.8% — gap remains" /></span>
             </div>
-            <div className="mt-2 text-xs text-muted-foreground">BIPOC: 23.4% vs White: 41.2%</div>
+            <div className="mt-2 text-xs text-muted-foreground"><EditableText id="kpi.employment.note" defaultValue="BIPOC: 23.4% vs White: 41.2%" /></div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground font-medium">Agent Tasks Today</span>
+              <span className="text-sm text-muted-foreground font-medium"><EditableText id="kpi.tasks.label" defaultValue="Agent Tasks Today" /></span>
             </div>
-            <div className="text-3xl font-bold text-foreground">127</div>
+            <div className="text-3xl font-bold text-foreground"><EditableText id="kpi.tasks.value" defaultValue="127" /></div>
             <div className="flex items-center gap-1.5 mt-1">
-              <span className="text-xs text-green-600 font-medium">98.4% sniff check pass rate</span>
+              <span className="text-xs text-green-600 font-medium"><EditableText id="kpi.tasks.change" defaultValue="98.4% sniff check pass rate" /></span>
             </div>
-            <div className="mt-2 text-xs text-muted-foreground">14 active agents</div>
+            <div className="mt-2 text-xs text-muted-foreground"><EditableText id="kpi.tasks.note" defaultValue="14 active agents" /></div>
           </CardContent>
         </Card>
       </div>

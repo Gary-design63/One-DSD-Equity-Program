@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { EditableText } from "@/components/EditableText";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,9 +30,11 @@ export default function SettingsPage() {
   return (
     <div className="p-6 space-y-6 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-bold">Platform Settings</h1>
+        <h1 className="text-2xl font-bold">
+          <EditableText id="settings.title" defaultValue="Platform Settings" />
+        </h1>
         <p className="text-muted-foreground mt-1">
-          Configuration for the One DSD Equity and Inclusion Agentic Operations Platform
+          <EditableText id="settings.subtitle" defaultValue="Configuration for the One DSD Equity and Inclusion Agentic Operations Platform" />
         </p>
       </div>
 
