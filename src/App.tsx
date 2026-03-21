@@ -4,6 +4,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell
 } from "recharts";
+import { cn } from "@/lib/utils";
 
 const C = {
   navy: "#003865",
@@ -22,7 +23,6 @@ const C = {
   muted: "#5a6577"
 };
 
-// FIX 1: Added "casestudy" key so KnowledgeBase Badge types resolve correctly
 const BADGE_TYPES: Record<string, string> = {
   default: "bg-gray-100 text-gray-800",
   open: "bg-blue-100 text-blue-800",
@@ -33,7 +33,6 @@ const BADGE_TYPES: Record<string, string> = {
   gate3: "bg-red-100 text-red-800",
   framework: "bg-purple-100 text-purple-800",
   concept: "bg-blue-100 text-blue-800",
-  case: "bg-green-100 text-green-800",
   casestudy: "bg-green-100 text-green-800",
   recommendation: "bg-orange-100 text-orange-800",
   policy: "bg-red-100 text-red-800",
@@ -41,7 +40,7 @@ const BADGE_TYPES: Record<string, string> = {
 };
 
 const Badge = ({ text, type = "default" }: { text: string; type?: string }) => (
-  <span className={`inline-block px-2.5 py-1 rounded text-xs font-medium ${BADGE_TYPES[type] ?? BADGE_TYPES.default}`}>
+  <span className={cn("inline-block px-2.5 py-1 rounded text-xs font-medium", BADGE_TYPES[type] ?? BADGE_TYPES.default)}>
     {text}
   </span>
 );
@@ -52,8 +51,8 @@ const Prog = ({ value, color = C.green }: { value: number; color?: string }) => 
   </div>
 );
 
-const Card = ({ children, className = "", style = {} }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) => (
-  <div className={`bg-white rounded-lg border border-gray-200 p-6 shadow-sm ${className}`} style={style}>
+const Card = ({ children, className, style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) => (
+  <div className={cn("bg-white rounded-lg border border-gray-200 p-6 shadow-sm", className)} style={style}>
     {children}
   </div>
 );
@@ -71,8 +70,8 @@ const Home = () => (
         { title: "DSD Equity Strategic Plan", desc: "Long-term vision for equity initiatives" },
         { title: "DHS Analysis Framework", desc: "Comprehensive assessment methodology" },
         { title: "Request a Consultation", desc: "Schedule a consultation with our team" }
-      ].map((card, i) => (
-        <Card key={i} className="text-center">
+      ].map((card) => (
+        <Card key={card.title} className="text-center">
           <h3 className="font-semibold text-lg mb-2" style={{ color: C.navy }}>{card.title}</h3>
           <p className="text-sm text-gray-600">{card.desc}</p>
         </Card>
@@ -84,8 +83,8 @@ const Home = () => (
         { icon: "🎯", title: "Programs and Initiatives", desc: "Active programs and projects" },
         { icon: "📚", title: "Training and Learning", desc: "Educational resources" },
         { icon: "📊", title: "Metrics and Progress", desc: "Track our progress" }
-      ].map((tile, i) => (
-        <Card key={i}>
+      ].map((tile) => (
+        <Card key={tile.title}>
           <div className="text-3xl mb-3">{tile.icon}</div>
           <h3 className="font-semibold text-sm mb-1">{tile.title}</h3>
           <p className="text-xs text-gray-600">{tile.desc}</p>
@@ -165,116 +164,113 @@ const Queue = () => (
   </div>
 );
 
-const KPIDashboard = () => {
-  const trendData = [
-    { month: "Oct", consultations: 45, reviews: 30, training: 20 },
-    { month: "Nov", consultations: 52, reviews: 38, training: 28 },
-    { month: "Dec", consultations: 48, reviews: 42, training: 35 },
-    { month: "Jan", consultations: 60, reviews: 50, training: 40 },
-    { month: "Feb", consultations: 65, reviews: 55, training: 42 },
-    { month: "Mar", consultations: 68, reviews: 58, training: 45 }
-  ];
-  const pieData = [
-    { name: "Completed", value: 68, color: C.ok },
-    { name: "In Progress", value: 22, color: C.accent },
-    { name: "Pending", value: 10, color: C.warn }
-  ];
-  const kpiData = [
-    { label: "Consultations Completed", value: 68, color: C.green },
-    { label: "Staff Trained", value: 42, color: C.accent },
-    { label: "Equity Reviews", value: 85, color: C.ok }
-  ];
-  const parityData = [
-    { label: "Response Parity", value: 0.92 },
-    { label: "Performance Ratio", value: 0.90 },
-    { label: "Accessibility", value: 1.0, badge: "AA WCAG" },
-    { label: "Language Access", value: 0.84 }
-  ];
-  const accommodationData = [
-    { label: "Accommodation Rate", value: 91 },
-    { label: "Follow-up Completion", value: 94 },
-    { label: "Satisfaction Score", value: 96 }
-  ];
+// Hoisted: static data arrays that never change between renders
+const TREND_DATA = [
+  { month: "Oct", consultations: 45, reviews: 30, training: 20 },
+  { month: "Nov", consultations: 52, reviews: 38, training: 28 },
+  { month: "Dec", consultations: 48, reviews: 42, training: 35 },
+  { month: "Jan", consultations: 60, reviews: 50, training: 40 },
+  { month: "Feb", consultations: 65, reviews: 55, training: 42 },
+  { month: "Mar", consultations: 68, reviews: 58, training: 45 }
+];
+const PIE_DATA = [
+  { name: "Completed", value: 68, color: C.ok },
+  { name: "In Progress", value: 22, color: C.accent },
+  { name: "Pending", value: 10, color: C.warn }
+];
+const KPI_DATA = [
+  { label: "Consultations Completed", value: 68, color: C.green },
+  { label: "Staff Trained", value: 42, color: C.accent },
+  { label: "Equity Reviews", value: 85, color: C.ok }
+];
+const PARITY_DATA = [
+  { label: "Response Parity", value: 0.92 },
+  { label: "Performance Ratio", value: 0.90 },
+  { label: "Accessibility", value: 1.0, badge: "AA WCAG" },
+  { label: "Language Access", value: 0.84 }
+];
+const ACCOMMODATION_DATA = [
+  { label: "Accommodation Rate", value: 91 },
+  { label: "Follow-up Completion", value: 94 },
+  { label: "Satisfaction Score", value: 96 }
+];
 
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {kpiData.map((kpi) => (
-          <Card key={kpi.label}>
-            <p className="text-sm text-gray-600 mb-3">{kpi.label}</p>
-            <div className="text-3xl font-bold mb-3" style={{ color: kpi.color }}>{kpi.value}%</div>
-            <Prog value={kpi.value} color={kpi.color} />
-          </Card>
-        ))}
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <h3 className="font-semibold mb-4" style={{ color: C.navy }}>Program Trends</h3>
-          {/* FIX 4: Each series gets its own stackId so areas don't overlap incorrectly;
-              Legend added so series are identifiable */}
-          <ResponsiveContainer width="100%" height={250}>
-            <AreaChart data={trendData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Area type="monotone" dataKey="consultations" stroke={C.accent} fill={C.accent} fillOpacity={0.3} />
-              <Area type="monotone" dataKey="reviews" stroke={C.ok} fill={C.ok} fillOpacity={0.3} />
-              <Area type="monotone" dataKey="training" stroke={C.orange} fill={C.orange} fillOpacity={0.3} />
-            </AreaChart>
-          </ResponsiveContainer>
+const KPIDashboard = () => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {KPI_DATA.map((kpi) => (
+        <Card key={kpi.label}>
+          <p className="text-sm text-gray-600 mb-3">{kpi.label}</p>
+          <div className="text-3xl font-bold mb-3" style={{ color: kpi.color }}>{kpi.value}%</div>
+          <Prog value={kpi.value} color={kpi.color} />
         </Card>
-        <Card>
-          <h3 className="font-semibold mb-4" style={{ color: C.navy }}>Status Distribution</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                dataKey="value"
-                label={({ name, value }: { name: string; value: number }) => `${name}: ${value}%`}
-              >
-                {pieData.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </Card>
-      </div>
+      ))}
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <Card>
-        <h3 className="font-semibold mb-4" style={{ color: C.navy }}>Response Parity Metrics</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {parityData.map((item) => (
-            <div key={item.label}>
-              <p className="text-xs text-gray-600 mb-2">{item.label}</p>
-              <div className="text-2xl font-bold" style={{ color: C.accent }}>{item.value.toFixed(2)}</div>
-              {item.badge && <Badge text={item.badge} type="default" />}
-            </div>
-          ))}
-        </div>
+        <h3 className="font-semibold mb-4" style={{ color: C.navy }}>Program Trends</h3>
+        <ResponsiveContainer width="100%" height={250}>
+          <AreaChart data={TREND_DATA}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="month" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Area type="monotone" dataKey="consultations" stroke={C.accent} fill={C.accent} fillOpacity={0.3} />
+            <Area type="monotone" dataKey="reviews" stroke={C.ok} fill={C.ok} fillOpacity={0.3} />
+            <Area type="monotone" dataKey="training" stroke={C.orange} fill={C.orange} fillOpacity={0.3} />
+          </AreaChart>
+        </ResponsiveContainer>
       </Card>
       <Card>
-        <h3 className="font-semibold mb-4" style={{ color: C.navy }}>Accommodation Metrics</h3>
-        <div className="space-y-4">
-          {accommodationData.map((metric) => (
-            <div key={metric.label}>
-              <div className="flex justify-between mb-2">
-                <span className="text-sm font-medium">{metric.label}</span>
-                <span className="text-sm font-semibold" style={{ color: C.green }}>{metric.value}%</span>
-              </div>
-              <Prog value={metric.value} color={C.ok} />
-            </div>
-          ))}
-        </div>
+        <h3 className="font-semibold mb-4" style={{ color: C.navy }}>Status Distribution</h3>
+        <ResponsiveContainer width="100%" height={250}>
+          <PieChart>
+            <Pie
+              data={PIE_DATA}
+              cx="50%"
+              cy="50%"
+              outerRadius={80}
+              dataKey="value"
+              label={({ name, value }: { name: string; value: number }) => `${name}: ${value}%`}
+            >
+              {PIE_DATA.map((entry) => (
+                <Cell key={entry.name} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip />
+          </PieChart>
+        </ResponsiveContainer>
       </Card>
     </div>
-  );
-};
+    <Card>
+      <h3 className="font-semibold mb-4" style={{ color: C.navy }}>Response Parity Metrics</h3>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {PARITY_DATA.map((item) => (
+          <div key={item.label}>
+            <p className="text-xs text-gray-600 mb-2">{item.label}</p>
+            <div className="text-2xl font-bold" style={{ color: C.accent }}>{item.value.toFixed(2)}</div>
+            {item.badge && <Badge text={item.badge} type="default" />}
+          </div>
+        ))}
+      </div>
+    </Card>
+    <Card>
+      <h3 className="font-semibold mb-4" style={{ color: C.navy }}>Accommodation Metrics</h3>
+      <div className="space-y-4">
+        {ACCOMMODATION_DATA.map((metric) => (
+          <div key={metric.label}>
+            <div className="flex justify-between mb-2">
+              <span className="text-sm font-medium">{metric.label}</span>
+              <span className="text-sm font-semibold" style={{ color: C.green }}>{metric.value}%</span>
+            </div>
+            <Prog value={metric.value} color={C.ok} />
+          </div>
+        ))}
+      </div>
+    </Card>
+  </div>
+);
 
 const Staff = () => (
   <div className="space-y-6">
@@ -328,7 +324,17 @@ const Staff = () => (
   </div>
 );
 
-// FIX 2: Send button now appends user message to conversation state
+const MAX_MESSAGES = 50;
+
+const ASSIST_PROMPTS = [
+  "Equity review process",
+  "Writing help for proposals",
+  "Policy analysis support",
+  "Training design assistance",
+  "Cultural competency brief",
+  "Data interpretation guide"
+];
+
 const EquityAssist = () => {
   const [messages, setMessages] = useState([
     { role: "assistant", text: "Hello! I'm One DSD Equity Assist. How can I help you today?" },
@@ -344,18 +350,9 @@ const EquityAssist = () => {
       ...prev,
       { role: "user", text: trimmed },
       { role: "assistant", text: "Thank you for your question. Our equity team will follow up with detailed guidance on that topic." }
-    ]);
+    ].slice(-MAX_MESSAGES));
     setInput("");
   };
-
-  const prompts = [
-    "Equity review process",
-    "Writing help for proposals",
-    "Policy analysis support",
-    "Training design assistance",
-    "Cultural competency brief",
-    "Data interpretation guide"
-  ];
 
   return (
     <div className="space-y-6">
@@ -371,7 +368,7 @@ const EquityAssist = () => {
           ))}
         </div>
         <div className="grid grid-cols-3 gap-2 mb-4">
-          {prompts.map((prompt) => (
+          {ASSIST_PROMPTS.map((prompt) => (
             <button
               key={prompt}
               onClick={() => setInput(prompt)}
@@ -464,76 +461,69 @@ const KnowledgeBase = () => (
         ))}
       </div>
     </Card>
-    <div>
-      <h3 className="font-semibold mb-4" style={{ color: C.navy }}>Knowledge Objects</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[
-          { title: "Equity Analysis Framework", type: "framework" },
-          { title: "Accessibility Standards", type: "concept" },
-          { title: "Implementation Case Study", type: "casestudy" },
-          { title: "Recommendations for Change", type: "recommendation" },
-          { title: "Governance Policy", type: "policy" },
-          { title: "Compliance Requirements", type: "framework" }
-        ].map((obj) => (
-          <Card key={obj.title}>
-            {/* FIX 1: type values are pre-normalized lowercase keys matching BADGE_TYPES */}
-            <Badge text={obj.type.charAt(0).toUpperCase() + obj.type.replace("casestudy", "Case study").slice(1)} type={obj.type} />
-            <p className="font-medium text-sm mt-3">{obj.title}</p>
-          </Card>
-        ))}
-      </div>
+    <h3 className="font-semibold" style={{ color: C.navy }}>Knowledge Objects</h3>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {[
+        { title: "Equity Analysis Framework", type: "framework", label: "Framework" },
+        { title: "Accessibility Standards", type: "concept", label: "Concept" },
+        { title: "Implementation Case Study", type: "casestudy", label: "Case Study" },
+        { title: "Recommendations for Change", type: "recommendation", label: "Recommendation" },
+        { title: "Governance Policy", type: "policy", label: "Policy" },
+        { title: "Compliance Requirements", type: "framework", label: "Framework" }
+      ].map((obj) => (
+        <Card key={obj.title}>
+          <Badge text={obj.label} type={obj.type} />
+          <p className="font-medium text-sm mt-3">{obj.title}</p>
+        </Card>
+      ))}
     </div>
   </div>
 );
 
 const Workflows = () => (
-  <div className="space-y-6">
-    <div className="space-y-4">
-      {[
-        { title: "Consultation Request", desc: "Process incoming consultation requests and assign to team", steps: 5 },
-        { title: "Equity Review", desc: "Conduct comprehensive equity and inclusion assessment", steps: 7 },
-        { title: "Training Delivery", desc: "Schedule and deliver training sessions", steps: 4 },
-        { title: "Policy Analysis", desc: "Analyze policies for equity impact", steps: 6 },
-        { title: "Implementation Support", desc: "Provide ongoing support for implementation", steps: 8 }
-      ].map((workflow) => (
-        <Card key={workflow.title}>
-          <div className="flex justify-between items-start mb-3">
-            <div>
-              <h3 className="font-semibold">{workflow.title}</h3>
-              <p className="text-sm text-gray-600">{workflow.desc}</p>
-            </div>
-            <Badge text={`${workflow.steps} steps`} type="default" />
+  <div className="space-y-4">
+    {[
+      { title: "Consultation Request", desc: "Process incoming consultation requests and assign to team", steps: 5 },
+      { title: "Equity Review", desc: "Conduct comprehensive equity and inclusion assessment", steps: 7 },
+      { title: "Training Delivery", desc: "Schedule and deliver training sessions", steps: 4 },
+      { title: "Policy Analysis", desc: "Analyze policies for equity impact", steps: 6 },
+      { title: "Implementation Support", desc: "Provide ongoing support for implementation", steps: 8 }
+    ].map((workflow) => (
+      <Card key={workflow.title}>
+        <div className="flex justify-between items-start mb-3">
+          <div>
+            <h3 className="font-semibold">{workflow.title}</h3>
+            <p className="text-sm text-gray-600">{workflow.desc}</p>
           </div>
-          <div className="flex gap-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-            {Array.from({ length: workflow.steps }).map((_, i) => (
-              <div key={i} className="flex-1 h-full" style={{ backgroundColor: i < 3 ? C.green : C.border }} />
-            ))}
-          </div>
-        </Card>
-      ))}
-    </div>
+          <Badge text={`${workflow.steps} steps`} type="default" />
+        </div>
+        <div className="flex gap-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+          {Array.from({ length: workflow.steps }).map((_, i) => (
+            <div key={i} className="flex-1 h-full" style={{ backgroundColor: i < 3 ? C.green : C.border }} />
+          ))}
+        </div>
+      </Card>
+    ))}
   </div>
 );
 
 const AuditLog = () => (
-  <div className="space-y-6">
-    <div className="space-y-3">
-      {[
-        { time: "10:45 AM", action: "Consultation C-2026-041 marked as completed", user: "Sarah Johnson", color: C.ok },
-        { time: "09:30 AM", action: "Equity review submitted for policy document", user: "Marcus Chen", color: C.accent },
-        { time: "08:15 AM", action: "Training material classifier processed 3 documents", user: "System", color: C.navy },
-        { time: "Yesterday 4:20 PM", action: "Access audit completed", user: "Amanda Williams", color: C.warn },
-        { time: "Yesterday 2:10 PM", action: "User permission updated", user: "System Admin", color: C.alert }
-      ].map((entry, i) => (
-        <Card key={i} style={{ borderLeft: `4px solid ${entry.color}` }}>
-          <p className="font-medium text-sm">{entry.action}</p>
-          <div className="flex justify-between mt-2">
-            <span className="text-xs text-gray-600">{entry.user}</span>
-            <span className="text-xs text-gray-500">{entry.time}</span>
-          </div>
-        </Card>
-      ))}
-    </div>
+  <div className="space-y-3">
+    {[
+      { time: "10:45 AM", action: "Consultation C-2026-041 marked as completed", user: "Sarah Johnson", color: C.ok },
+      { time: "09:30 AM", action: "Equity review submitted for policy document", user: "Marcus Chen", color: C.accent },
+      { time: "08:15 AM", action: "Training material classifier processed 3 documents", user: "System", color: C.navy },
+      { time: "Yesterday 4:20 PM", action: "Access audit completed", user: "Amanda Williams", color: C.warn },
+      { time: "Yesterday 2:10 PM", action: "User permission updated", user: "System Admin", color: C.alert }
+    ].map((entry) => (
+      <Card key={entry.action} style={{ borderLeft: `4px solid ${entry.color}` }}>
+        <p className="font-medium text-sm">{entry.action}</p>
+        <div className="flex justify-between mt-2">
+          <span className="text-xs text-gray-600">{entry.user}</span>
+          <span className="text-xs text-gray-500">{entry.time}</span>
+        </div>
+      </Card>
+    ))}
   </div>
 );
 
@@ -558,14 +548,12 @@ const navigation: Record<string, ViewKey[]> = {
   SYSTEMS: ["kb", "workflows", "audit"]
 };
 
-// FIX 3: currentView typed as ViewKey so views[currentView] resolves without TS error
 export default function App() {
   const [currentView, setCurrentView] = useState<ViewKey>("home");
   const CurrentComponent = views[currentView].component;
 
   return (
     <div className="flex h-screen" style={{ backgroundColor: C.bg }}>
-      {/* Sidebar */}
       <div className="w-64 flex flex-col border-r" style={{ backgroundColor: C.card, borderColor: C.border }}>
         <div className="p-6 border-b" style={{ borderColor: C.border }}>
           <h1 className="font-bold text-lg" style={{ color: C.navy }}>One DSD Equity</h1>
@@ -605,7 +593,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         <div className="h-16 border-b flex items-center justify-between px-8 shrink-0" style={{ backgroundColor: C.navyD, borderColor: C.border }}>
           <h2 className="text-white font-semibold">One DSD Equity and Inclusion Operations</h2>
