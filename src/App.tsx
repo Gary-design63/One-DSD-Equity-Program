@@ -1,22 +1,6 @@
 import React, { useState } from "react";
 import { Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
-import {
-  LayoutDashboard,
-  Bot,
-  Users,
-  BookOpen,
-  Target,
-  FileText,
-  Settings,
-  Shield,
-  TrendingUp,
-  Menu,
-  X,
-  ChevronRight,
-  Bell,
-  Search
-} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Dashboard from "@/pages/Dashboard";
@@ -32,7 +16,6 @@ import SettingsPage from "@/pages/SettingsPage";
 interface NavItem {
   label: string;
   path: string;
-  icon: React.ReactNode;
   description: string;
   badge?: number;
 }
@@ -41,49 +24,41 @@ const NAV_ITEMS: NavItem[] = [
   {
     label: "Dashboard",
     path: "/",
-    icon: <LayoutDashboard className="h-5 w-5" />,
     description: "Platform overview and key metrics"
   },
   {
-    label: "AI Agents",
+    label: "Agents",
     path: "/agents",
-    icon: <Bot className="h-5 w-5" />,
     description: "Equity intelligence agents"
   },
   {
     label: "Equity Metrics",
     path: "/metrics",
-    icon: <TrendingUp className="h-5 w-5" />,
     description: "Disparity data and analysis"
   },
   {
     label: "Community",
     path: "/community",
-    icon: <Users className="h-5 w-5" />,
     description: "Community partnerships and engagement"
   },
   {
     label: "Training",
     path: "/training",
-    icon: <BookOpen className="h-5 w-5" />,
     description: "Equity education and workforce development"
   },
   {
     label: "Goals",
     path: "/goals",
-    icon: <Target className="h-5 w-5" />,
     description: "Operational goals and key results"
   },
   {
     label: "Policy",
     path: "/policy",
-    icon: <FileText className="h-5 w-5" />,
     description: "Policy documents and analysis"
   },
   {
     label: "Settings",
     path: "/settings",
-    icon: <Settings className="h-5 w-5" />,
     description: "Platform configuration"
   }
 ];
@@ -113,7 +88,7 @@ function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-[#78BE21] rounded flex items-center justify-center">
-              <Shield className="h-4 w-4 text-white" />
+              <span className="text-white text-xs font-bold">DSD</span>
             </div>
             <div>
               <div className="font-bold text-sm leading-tight">One DSD</div>
@@ -122,10 +97,10 @@ function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
           </div>
           <button
             onClick={onClose}
-            className="lg:hidden text-white/60 hover:text-white"
+            className="lg:hidden text-white/60 hover:text-white text-sm px-1"
             aria-label="Close menu"
           >
-            <X className="h-5 w-5" />
+            ✕
           </button>
         </div>
 
@@ -148,19 +123,11 @@ function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
                     : "text-white/70 hover:bg-white/10 hover:text-white"
                 )}
               >
-                <span className={cn(
-                  "transition-colors",
-                  isActive ? "text-[#78BE21]" : "text-white/60 group-hover:text-white/80"
-                )}>
-                  {item.icon}
-                </span>
                 <span>{item.label}</span>
                 {item.badge ? (
                   <span className="ml-auto bg-[#78BE21] text-white text-xs rounded-full px-2 py-0.5 min-w-[20px] text-center">
                     {item.badge}
                   </span>
-                ) : isActive ? (
-                  <ChevronRight className="ml-auto h-3.5 w-3.5 text-white/40" />
                 ) : null}
               </Link>
             );
@@ -194,10 +161,10 @@ function Header({ onMenuClick }: { onMenuClick: () => void }) {
     <header className="bg-white border-b border-border h-14 flex items-center px-4 gap-4 sticky top-0 z-30">
       <button
         onClick={onMenuClick}
-        className="lg:hidden text-muted-foreground hover:text-foreground"
+        className="lg:hidden text-muted-foreground hover:text-foreground text-sm font-medium"
         aria-label="Open menu"
       >
-        <Menu className="h-5 w-5" />
+        Menu
       </button>
 
       <div className="flex items-center gap-2 text-sm">
@@ -208,18 +175,17 @@ function Header({ onMenuClick }: { onMenuClick: () => void }) {
 
       <div className="flex-1 max-w-sm hidden md:flex">
         <div className="relative w-full">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
             placeholder="Search agents, documents, goals..."
-            className="w-full pl-8 pr-4 py-1.5 text-sm bg-muted rounded-md border-0 focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
+            className="w-full px-4 py-1.5 text-sm bg-muted rounded-md border-0 focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
           />
         </div>
       </div>
 
       <div className="ml-auto flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
-          <Bell className="h-4 w-4" />
+        <Button variant="ghost" size="sm" className="relative text-xs" aria-label="Notifications">
+          Notifications
           <span className="absolute top-1 right-1 w-2 h-2 bg-[#78BE21] rounded-full"></span>
         </Button>
 

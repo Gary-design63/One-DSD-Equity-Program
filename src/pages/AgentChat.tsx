@@ -1,20 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import {
-  ArrowLeft,
-  Send,
-  Bot,
-  User,
-  Loader2,
-  CheckCircle2,
-  AlertTriangle,
-  Copy,
-  RotateCcw,
-  Download,
-  Shield,
-  ChevronDown,
-  Info
-} from "lucide-react";
+import { Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -214,13 +200,10 @@ function MessageBubble({
   return (
     <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}>
       {/* Avatar */}
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1 ${
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1 text-white text-xs font-bold ${
         isUser ? "bg-[#003865]" : "bg-[#78BE21]"
       }`}>
-        {isUser
-          ? <User className="h-4 w-4 text-white" />
-          : <Bot className="h-4 w-4 text-white" />
-        }
+        {isUser ? "U" : "A"}
       </div>
 
       {/* Content */}
@@ -243,10 +226,6 @@ function MessageBubble({
                   <span className={`flex items-center gap-1 font-medium ${
                     sniffResult.canProceed ? "text-green-600" : "text-red-600"
                   }`}>
-                    {sniffResult.canProceed
-                      ? <CheckCircle2 className="h-3.5 w-3.5" />
-                      : <AlertTriangle className="h-3.5 w-3.5" />
-                    }
                     L1 Check: {sniffResult.overallStatus}
                   </span>
                 </TooltipTrigger>
@@ -266,10 +245,10 @@ function MessageBubble({
           {!isUser && (
             <button
               onClick={copyToClipboard}
-              className="hover:text-foreground transition-colors"
+              className="hover:text-foreground transition-colors text-xs"
               title="Copy to clipboard"
             >
-              <Copy className="h-3.5 w-3.5" />
+              Copy
             </button>
           )}
         </div>
@@ -281,7 +260,7 @@ function MessageBubble({
 export default function AgentChat() {
   const { agentId } = useParams<{ agentId: string }>();
   const agent = AGENT_CONFIG[agentId || ""] || {
-    name: "AI Agent",
+    name: "Agent",
     purpose: "General equity assistance",
     starters: [],
     outputType: "draft" as const
@@ -320,7 +299,7 @@ export default function AgentChat() {
       const errorMsg: ConversationMessage = {
         id: `assistant-${Date.now()}`,
         role: "assistant",
-        content: "API key not configured. Please add VITE_ANTHROPIC_API_KEY to your .env file to enable AI responses. The platform is fully built and ready — just needs your Anthropic API key.",
+        content: "API key not configured. Please add VITE_ANTHROPIC_API_KEY to your .env file to enable agent responses. The platform is fully built and ready — just needs your Anthropic API key.",
         timestamp: new Date().toISOString()
       };
       setMessages(prev => [...prev, errorMsg]);
@@ -431,16 +410,12 @@ export default function AgentChat() {
         {/* Header */}
         <div className="bg-white border-b px-4 py-3 flex items-center gap-3">
           <Link to="/agents">
-            <Button variant="ghost" size="sm" className="gap-1.5">
-              <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Agents</span>
+            <Button variant="ghost" size="sm">
+              Agents
             </Button>
           </Link>
 
           <div className="flex items-center gap-3 flex-1">
-            <div className="w-8 h-8 rounded-lg bg-[#003865]/10 flex items-center justify-center">
-              <Bot className="h-4 w-4 text-[#003865]" />
-            </div>
             <div>
               <h2 className="text-sm font-semibold">{agent.name}</h2>
               <p className="text-xs text-muted-foreground hidden sm:block">{agent.purpose.slice(0, 80)}...</p>
@@ -465,22 +440,12 @@ export default function AgentChat() {
           </div>
 
           <div className="flex items-center gap-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={downloadConversation} className="h-8 w-8">
-                  <Download className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Download conversation</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={clearConversation} className="h-8 w-8">
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Clear conversation</TooltipContent>
-            </Tooltip>
+            <Button variant="ghost" size="sm" onClick={downloadConversation} className="text-xs h-8">
+              Download
+            </Button>
+            <Button variant="ghost" size="sm" onClick={clearConversation} className="text-xs h-8">
+              Clear
+            </Button>
           </div>
         </div>
 
@@ -488,16 +453,12 @@ export default function AgentChat() {
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.length === 0 && !isLoading && (
             <div className="flex flex-col items-center justify-center h-full space-y-6 text-center px-4">
-              <div className="w-16 h-16 rounded-2xl bg-[#003865]/10 flex items-center justify-center">
-                <Bot className="h-8 w-8 text-[#003865]" />
-              </div>
               <div>
                 <h3 className="text-lg font-semibold">{agent.name}</h3>
                 <p className="text-sm text-muted-foreground mt-1 max-w-md">{agent.purpose}</p>
               </div>
 
               <div className="flex items-center gap-2 text-xs bg-[#003865]/5 px-3 py-2 rounded-lg text-muted-foreground">
-                <Shield className="h-3.5 w-3.5 text-[#78BE21]" />
                 Primary Directive active · 39 Meta-Skills applied · Sniff Check L1 enabled
               </div>
 
@@ -527,8 +488,8 @@ export default function AgentChat() {
           {/* Streaming indicator */}
           {isLoading && streamingContent && (
             <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#78BE21] flex items-center justify-center flex-shrink-0 mt-1">
-                <Bot className="h-4 w-4 text-white" />
+              <div className="w-8 h-8 rounded-full bg-[#78BE21] flex items-center justify-center flex-shrink-0 mt-1 text-white text-xs font-bold">
+                A
               </div>
               <div className="flex-1 max-w-[85%]">
                 <div className="rounded-lg rounded-tl-sm px-4 py-3 bg-muted text-sm leading-relaxed whitespace-pre-wrap">
@@ -541,14 +502,11 @@ export default function AgentChat() {
 
           {isLoading && !streamingContent && (
             <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#78BE21] flex items-center justify-center flex-shrink-0 mt-1">
-                <Bot className="h-4 w-4 text-white" />
+              <div className="w-8 h-8 rounded-full bg-[#78BE21] flex items-center justify-center flex-shrink-0 mt-1 text-white text-xs font-bold">
+                A
               </div>
               <div className="rounded-lg rounded-tl-sm px-4 py-3 bg-muted">
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">{agent.name} is working...</span>
-                </div>
+                <span className="text-sm text-muted-foreground">{agent.name} is working...</span>
               </div>
             </div>
           )}
@@ -570,17 +528,34 @@ export default function AgentChat() {
                 disabled={isLoading}
               />
             </div>
-            <Button
-              onClick={() => sendMessage(input)}
-              disabled={!input.trim() || isLoading}
-              className="h-[52px] w-[52px] flex-shrink-0"
-              size="icon"
-            >
-              {isLoading
-                ? <Loader2 className="h-5 w-5 animate-spin" />
-                : <Send className="h-5 w-5" />
-              }
-            </Button>
+            <div className="flex flex-col gap-1">
+              <label
+                htmlFor="file-upload"
+                className="h-[26px] w-[52px] flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
+                title="Upload multimedia or document"
+              >
+                <Paperclip className="h-4 w-4" />
+              </label>
+              <input
+                id="file-upload"
+                type="file"
+                accept="audio/*,video/*,image/*,.pdf,.doc,.docx,.txt"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setInput(prev => prev + (prev ? "\n" : "") + `[Attached: ${file.name}]`);
+                  }
+                }}
+              />
+              <Button
+                onClick={() => sendMessage(input)}
+                disabled={!input.trim() || isLoading}
+                className="h-[26px] w-[52px] flex-shrink-0 text-xs"
+              >
+                {isLoading ? "..." : "Send"}
+              </Button>
+            </div>
           </div>
           <p className="text-xs text-muted-foreground mt-2 text-center">
             All outputs governed by Primary Directive · L1 Sniff Check active · Audience: {audienceOptions.find(o => o.value === audience)?.label}

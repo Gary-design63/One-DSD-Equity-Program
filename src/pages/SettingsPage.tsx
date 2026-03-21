@@ -1,20 +1,5 @@
 import React, { useState } from "react";
-import {
-  Settings,
-  Key,
-  Database,
-  Shield,
-  Bot,
-  Bell,
-  Palette,
-  Info,
-  CheckCircle2,
-  AlertTriangle,
-  Eye,
-  EyeOff,
-  Save,
-  RefreshCw
-} from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -62,19 +47,15 @@ export default function SettingsPage() {
         <TabsContent value="api" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Key className="h-4 w-4" />
-                Anthropic API Key
-              </CardTitle>
+              <CardTitle className="text-base">Anthropic API Key</CardTitle>
               <CardDescription>
-                Required for all AI agent functionality. Get your key at console.anthropic.com.
+                Required for all agent functionality. Get your key at console.anthropic.com.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3 p-3 rounded-lg border">
                 {apiKeyConfigured ? (
                   <>
-                    <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-green-700">API Key Configured</p>
                       <p className="text-xs text-muted-foreground">VITE_ANTHROPIC_API_KEY is set in your environment</p>
@@ -83,10 +64,9 @@ export default function SettingsPage() {
                   </>
                 ) : (
                   <>
-                    <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-amber-700">API Key Not Configured</p>
-                      <p className="text-xs text-muted-foreground">Add VITE_ANTHROPIC_API_KEY to your .env file to enable AI agents</p>
+                      <p className="text-xs text-muted-foreground">Add VITE_ANTHROPIC_API_KEY to your .env file to enable agents</p>
                     </div>
                     <Badge className="bg-amber-100 text-amber-700 border-0">Required</Badge>
                   </>
@@ -132,10 +112,7 @@ export default function SettingsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Database className="h-4 w-4" />
-                Supabase Database
-              </CardTitle>
+              <CardTitle className="text-base">Supabase Database</CardTitle>
               <CardDescription>
                 Optional: enables conversation persistence, audit logging, and equity metrics storage.
               </CardDescription>
@@ -144,7 +121,6 @@ export default function SettingsPage() {
               <div className="flex items-center gap-3 p-3 rounded-lg border">
                 {supabaseConfigured ? (
                   <>
-                    <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-green-700">Supabase Connected</p>
                       <p className="text-xs text-muted-foreground">Database persistence is active</p>
@@ -153,7 +129,6 @@ export default function SettingsPage() {
                   </>
                 ) : (
                   <>
-                    <Info className="h-5 w-5 text-blue-500 flex-shrink-0" />
                     <div className="flex-1">
                       <p className="text-sm font-medium">Supabase Not Configured</p>
                       <p className="text-xs text-muted-foreground">Platform works without Supabase — add for data persistence</p>
@@ -200,10 +175,7 @@ export default function SettingsPage() {
         <TabsContent value="agents" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                Sniff Check Engine
-              </CardTitle>
+              <CardTitle className="text-base">Sniff Check Engine</CardTitle>
               <CardDescription>
                 Quality assurance system that verifies all agent outputs before delivery.
               </CardDescription>
@@ -249,10 +221,7 @@ export default function SettingsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Bot className="h-4 w-4" />
-                Default Agent Settings
-              </CardTitle>
+              <CardTitle className="text-base">Default Agent Settings</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
@@ -288,10 +257,7 @@ export default function SettingsPage() {
         <TabsContent value="platform" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Bell className="h-4 w-4" />
-                Notifications
-              </CardTitle>
+              <CardTitle className="text-base">Notifications</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
@@ -319,7 +285,7 @@ export default function SettingsPage() {
             <CardContent className="grid grid-cols-2 gap-3 text-sm">
               {[
                 { label: "Platform Version", value: "1.0.0" },
-                { label: "AI Model", value: "claude-opus-4-5" },
+                { label: "Model", value: "claude-opus-4-5" },
                 { label: "Active Agents", value: "14" },
                 { label: "Meta-Skills", value: "39 (6 domains)" },
                 { label: "Sniff Check Levels", value: "L1, L2, L3" },
@@ -334,14 +300,8 @@ export default function SettingsPage() {
           </Card>
 
           <div className="flex gap-2">
-            <Button onClick={handleSaveSettings} className="gap-2">
-              <Save className="h-4 w-4" />
-              Save Settings
-            </Button>
-            <Button variant="outline" className="gap-2">
-              <RefreshCw className="h-4 w-4" />
-              Reset to Defaults
-            </Button>
+            <Button onClick={handleSaveSettings}>Save Settings</Button>
+            <Button variant="outline">Reset to Defaults</Button>
           </div>
         </TabsContent>
 
@@ -353,7 +313,7 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
               <p className="text-muted-foreground leading-relaxed">
-                The One DSD Equity and Inclusion Agentic Operations Platform is a purpose-built AI-powered platform for the
+                The One DSD Equity and Inclusion Agentic Operations Platform is a purpose-built agentic platform for the
                 Minnesota Department of Human Services Disability Services Division (DSD). It provides 14 specialized equity
                 agents, a 39 meta-skill framework, three-tier quality assurance (Sniff Check L1/L2/L3), and comprehensive
                 tools for equity data analysis, community engagement, policy development, and workforce training.
