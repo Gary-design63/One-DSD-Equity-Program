@@ -14,6 +14,7 @@ import {
   Calendar,
   MessageSquare
 } from "lucide-react";
+import { EditableText } from "@/components/EditableText";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -199,9 +200,11 @@ export default function CommunityPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Community Partnerships</h1>
+          <h1 className="text-2xl font-bold">
+            <EditableText id="community.title" defaultValue="Community Partnerships" />
+          </h1>
           <p className="text-muted-foreground mt-1">
-            {communities.length} community partnerships · Language justice · Nothing about us without us
+            <EditableText id="community.subtitle" defaultValue={`${communities.length} community partnerships · Language justice · Nothing about us without us`} />
           </p>
         </div>
         <Button className="gap-2">

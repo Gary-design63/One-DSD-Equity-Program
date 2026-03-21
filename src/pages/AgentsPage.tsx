@@ -1,17 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  Bot,
-  MessageSquare,
-  CheckCircle2,
-  Clock,
-  AlertTriangle,
-  ChevronRight,
-  Search,
-  Filter,
-  Star,
-  Zap
-} from "lucide-react";
+import { EditableText } from "@/components/EditableText";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -263,9 +252,11 @@ export default function AgentsPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">AI Equity Agents</h1>
+        <h1 className="text-2xl font-bold">
+          <EditableText id="agents.title" defaultValue="Equity Agents" />
+        </h1>
         <p className="text-muted-foreground mt-1">
-          {AGENTS.length} specialized agents · All governed by Primary Directive · 39 Meta-Skills applied universally
+          <EditableText id="agents.subtitle" defaultValue={`${AGENTS.length} specialized agents · All governed by Primary Directive · 39 Meta-Skills applied universally`} />
         </p>
       </div>
 
@@ -300,17 +291,14 @@ export default function AgentsPage() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search agents..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
           />
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
           <SelectTrigger className="w-40">
-            <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
@@ -330,13 +318,13 @@ export default function AgentsPage() {
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                    className="w-10 h-10 rounded-lg flex-shrink-0"
                     style={{ backgroundColor: `${agent.color}15` }}
-                  >
-                    <Bot className="h-5 w-5" style={{ color: agent.color }} />
-                  </div>
+                  />
                   <div>
-                    <CardTitle className="text-sm font-semibold leading-tight">{agent.name}</CardTitle>
+                    <CardTitle className="text-sm font-semibold leading-tight">
+                      <EditableText id={`agent.${agent.id}.name`} defaultValue={agent.name} />
+                    </CardTitle>
                     <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${categoryColors[agent.category]}`}>
                       {categoryLabels[agent.category]}
                     </span>
@@ -350,9 +338,7 @@ export default function AgentsPage() {
             </CardHeader>
 
             <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
-                {agent.description}
-              </p>
+              <EditableText id={`agent.${agent.id}.desc`} defaultValue={agent.description} multiline className="text-sm text-muted-foreground leading-relaxed line-clamp-3" />
 
               {/* Capabilities */}
               <div className="flex flex-wrap gap-1">
@@ -370,7 +356,6 @@ export default function AgentsPage() {
 
               {/* Meta-skills domains */}
               <div className="flex items-center gap-1.5">
-                <Zap className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">Meta-Skills:</span>
                 {agent.metaSkillsDomains.map(domain => (
                   <span key={domain} className="text-xs bg-[#003865]/10 text-[#003865] px-1.5 py-0.5 rounded font-medium">
@@ -381,25 +366,14 @@ export default function AgentsPage() {
 
               {/* Stats */}
               <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <MessageSquare className="h-3.5 w-3.5" />
-                  {agent.messageCount?.toLocaleString()} tasks
-                </span>
-                <span className="flex items-center gap-1">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-                  {agent.successRate}%
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" />
-                  ~{agent.averageResponseTime}s
-                </span>
+                <span>{agent.messageCount?.toLocaleString()} tasks</span>
+                <span>{agent.successRate}%</span>
+                <span>~{agent.averageResponseTime}s</span>
               </div>
 
               <Link to={`/agents/${agent.id}`} className="block">
-                <Button className="w-full gap-2" size="sm">
-                  <MessageSquare className="h-4 w-4" />
+                <Button className="w-full" size="sm">
                   Open Agent
-                  <ChevronRight className="h-3.5 w-3.5 ml-auto" />
                 </Button>
               </Link>
             </CardContent>
@@ -409,7 +383,6 @@ export default function AgentsPage() {
 
       {filteredAgents.length === 0 && (
         <div className="text-center py-16 text-muted-foreground">
-          <Bot className="h-12 w-12 mx-auto mb-4 opacity-30" />
           <p className="text-lg font-medium">No agents found</p>
           <p className="text-sm mt-1">Try adjusting your search or filter</p>
         </div>

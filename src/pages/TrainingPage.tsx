@@ -13,6 +13,7 @@ import {
   Globe,
   Award
 } from "lucide-react";
+import { EditableText } from "@/components/EditableText";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -290,9 +291,11 @@ export default function TrainingPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Equity Training and Education</h1>
+          <h1 className="text-2xl font-bold">
+            <EditableText id="training.title" defaultValue="Equity Training and Education" />
+          </h1>
           <p className="text-muted-foreground mt-1">
-            {courses.length} courses · {totalCompletions.toLocaleString()} completions · 5–8 person equity team equivalent
+            <EditableText id="training.subtitle" defaultValue={`${courses.length} courses · ${totalCompletions.toLocaleString()} completions · 5–8 person equity team equivalent`} />
           </p>
         </div>
         <Button className="gap-2">

@@ -1,20 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import {
-  TrendingUp,
-  TrendingDown,
-  Bot,
-  Users,
-  Target,
-  BookOpen,
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  ArrowRight,
-  Briefcase,
-  FileText,
-  Activity
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { EditableText } from "@/components/EditableText";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -99,20 +86,22 @@ export default function Dashboard() {
     <div className="p-6 space-y-6">
       {/* Page header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Equity Operations Dashboard</h1>
+        <h1 className="text-2xl font-bold text-foreground">
+          <EditableText id="dashboard.title" defaultValue="Equity Operations Dashboard" />
+        </h1>
         <p className="text-muted-foreground mt-1">
-          One DSD Equity and Inclusion Platform · Minnesota Department of Human Services
+          <EditableText id="dashboard.subtitle" defaultValue="One DSD Equity and Inclusion Platform · Minnesota Department of Human Services" />
         </p>
       </div>
 
       {/* Primary Directive banner */}
       <div className="bg-[#003865] text-white rounded-lg p-4 flex items-start gap-3">
-        <Activity className="h-5 w-5 text-[#78BE21] mt-0.5 flex-shrink-0" />
         <div>
-          <p className="text-sm font-medium">Primary Directive Active</p>
+          <p className="text-sm font-medium">
+            <EditableText id="dashboard.directive.title" defaultValue="Primary Directive Active" className="text-white" />
+          </p>
           <p className="text-xs text-white/70 mt-0.5">
-            "Every agent, every process, every output must multiply the Consultant's capacity, never divide it."
-            — 39 Meta-Skills · 6 Domains · 14 Agents · Sniff Check L1/L2/L3 Active
+            <EditableText id="dashboard.directive.body" defaultValue={"\"Every agent, every process, every output must multiply the Consultant's capacity, never divide it.\" — 39 Meta-Skills · 6 Domains · 14 Agents · Sniff Check L1/L2/L3 Active"} className="text-white/70" />
           </p>
         </div>
       </div>
@@ -122,60 +111,52 @@ export default function Dashboard() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground font-medium">Active Waivers</span>
-              <TrendingUp className="h-4 w-4 text-green-500" />
+              <span className="text-sm text-muted-foreground font-medium"><EditableText id="kpi.waivers.label" defaultValue="Active Waivers" /></span>
             </div>
-            <div className="text-3xl font-bold text-foreground">47,284</div>
+            <div className="text-3xl font-bold text-foreground"><EditableText id="kpi.waivers.value" defaultValue="47,284" /></div>
             <div className="flex items-center gap-1.5 mt-1">
-              <TrendingUp className="h-3.5 w-3.5 text-green-500" />
-              <span className="text-xs text-green-600 font-medium">+2.3% from last quarter</span>
+              <span className="text-xs text-green-600 font-medium"><EditableText id="kpi.waivers.change" defaultValue="+2.3% from last quarter" /></span>
             </div>
-            <div className="mt-2 text-xs text-muted-foreground">CADI · DD · BI · EW · AC</div>
+            <div className="mt-2 text-xs text-muted-foreground"><EditableText id="kpi.waivers.note" defaultValue="CADI · DD · BI · EW · AC" /></div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground font-medium">Waitlist (Total)</span>
-              <TrendingDown className="h-4 w-4 text-green-500" />
+              <span className="text-sm text-muted-foreground font-medium"><EditableText id="kpi.waitlist.label" defaultValue="Waitlist (Total)" /></span>
             </div>
-            <div className="text-3xl font-bold text-foreground">4,480</div>
+            <div className="text-3xl font-bold text-foreground"><EditableText id="kpi.waitlist.value" defaultValue="4,480" /></div>
             <div className="flex items-center gap-1.5 mt-1">
-              <TrendingDown className="h-3.5 w-3.5 text-green-500" />
-              <span className="text-xs text-green-600 font-medium">-7.1% from last quarter</span>
+              <span className="text-xs text-green-600 font-medium"><EditableText id="kpi.waitlist.change" defaultValue="-7.1% from last quarter" /></span>
             </div>
-            <div className="mt-2 text-xs text-muted-foreground">45% BIPOC community members</div>
+            <div className="mt-2 text-xs text-muted-foreground"><EditableText id="kpi.waitlist.note" defaultValue="45% BIPOC community members" /></div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground font-medium">Employment Rate</span>
-              <TrendingUp className="h-4 w-4 text-amber-500" />
+              <span className="text-sm text-muted-foreground font-medium"><EditableText id="kpi.employment.label" defaultValue="Employment Rate" /></span>
             </div>
-            <div className="text-3xl font-bold text-foreground">31.2%</div>
+            <div className="text-3xl font-bold text-foreground"><EditableText id="kpi.employment.value" defaultValue="31.2%" /></div>
             <div className="flex items-center gap-1.5 mt-1">
-              <TrendingUp className="h-3.5 w-3.5 text-amber-500" />
-              <span className="text-xs text-amber-600 font-medium">+1.8% — gap remains</span>
+              <span className="text-xs text-amber-600 font-medium"><EditableText id="kpi.employment.change" defaultValue="+1.8% — gap remains" /></span>
             </div>
-            <div className="mt-2 text-xs text-muted-foreground">BIPOC: 23.4% vs White: 41.2%</div>
+            <div className="mt-2 text-xs text-muted-foreground"><EditableText id="kpi.employment.note" defaultValue="BIPOC: 23.4% vs White: 41.2%" /></div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground font-medium">Agent Tasks Today</span>
-              <Bot className="h-4 w-4 text-[#003865]" />
+              <span className="text-sm text-muted-foreground font-medium"><EditableText id="kpi.tasks.label" defaultValue="Agent Tasks Today" /></span>
             </div>
-            <div className="text-3xl font-bold text-foreground">127</div>
+            <div className="text-3xl font-bold text-foreground"><EditableText id="kpi.tasks.value" defaultValue="127" /></div>
             <div className="flex items-center gap-1.5 mt-1">
-              <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-              <span className="text-xs text-green-600 font-medium">98.4% sniff check pass rate</span>
+              <span className="text-xs text-green-600 font-medium"><EditableText id="kpi.tasks.change" defaultValue="98.4% sniff check pass rate" /></span>
             </div>
-            <div className="mt-2 text-xs text-muted-foreground">14 active agents</div>
+            <div className="mt-2 text-xs text-muted-foreground"><EditableText id="kpi.tasks.note" defaultValue="14 active agents" /></div>
           </CardContent>
         </Card>
       </div>
@@ -248,7 +229,6 @@ export default function Dashboard() {
               </BarChart>
             </ResponsiveContainer>
             <div className="mt-3 p-2.5 bg-amber-50 rounded text-xs text-amber-800">
-              <AlertTriangle className="h-3.5 w-3.5 inline mr-1" />
               23-point gap: Black (18%) vs White (41%). Employment First priority.
             </div>
           </CardContent>
@@ -302,8 +282,8 @@ export default function Dashboard() {
                 <div className="flex items-center gap-3">
                   <Progress value={goal.progress} className="flex-1 h-1.5" />
                   <span className="text-xs text-muted-foreground w-8 text-right">{goal.progress}%</span>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1 whitespace-nowrap">
-                    <Clock className="h-3 w-3" /> {goal.dueDate}
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    {goal.dueDate}
                   </span>
                 </div>
               </div>
@@ -319,7 +299,7 @@ export default function Dashboard() {
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle className="text-base">Recent Agent Activity</CardTitle>
-              <CardDescription>AI agent outputs from the last 4 hours</CardDescription>
+              <CardDescription>Agent outputs from the last 4 hours</CardDescription>
             </div>
             <Link to="/agents">
               <Button variant="ghost" size="sm" className="text-xs gap-1">
@@ -331,9 +311,6 @@ export default function Dashboard() {
             <div className="space-y-3">
               {recentAgentActivity.map((activity, i) => (
                 <div key={i} className="flex items-start gap-3 py-2 border-b last:border-0">
-                  <div className="w-8 h-8 rounded-full bg-[#003865]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Bot className="h-4 w-4 text-[#003865]" />
-                  </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{activity.action}</p>
                     <div className="flex items-center gap-2 mt-0.5">
@@ -342,12 +319,7 @@ export default function Dashboard() {
                       <span className="text-xs text-muted-foreground">{activity.time}</span>
                     </div>
                   </div>
-                  <div className={`flex items-center gap-1 text-xs font-medium ${statusColors[activity.status]}`}>
-                    {activity.status === "success" ? (
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                    ) : (
-                      <AlertTriangle className="h-3.5 w-3.5" />
-                    )}
+                  <div className={`text-xs font-medium ${statusColors[activity.status]}`}>
                     {activity.status === "success" ? "Pass" : "Review"}
                   </div>
                 </div>
@@ -364,17 +336,16 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="space-y-4">
             {[
-              { label: "Active Agents", value: "14 / 14", icon: <Bot className="h-4 w-4" />, color: "text-green-600" },
-              { label: "Communities Tracked", value: "23", icon: <Users className="h-4 w-4" />, color: "text-[#003865]" },
-              { label: "Training Courses", value: "31 active", icon: <BookOpen className="h-4 w-4" />, color: "text-[#003865]" },
-              { label: "Goals In Progress", value: "18 / 24", icon: <Target className="h-4 w-4" />, color: "text-amber-600" },
-              { label: "Policy Docs Ready", value: "7 drafts", icon: <FileText className="h-4 w-4" />, color: "text-[#003865]" },
-              { label: "Sniff Check Rate", value: "98.4%", icon: <CheckCircle2 className="h-4 w-4" />, color: "text-green-600" },
-              { label: "Open Equity Alerts", value: "3 critical", icon: <AlertTriangle className="h-4 w-4" />, color: "text-red-600" },
-              { label: "DWRS 2026 Readiness", value: "67%", icon: <Briefcase className="h-4 w-4" />, color: "text-amber-600" }
+              { label: "Active Agents", value: "14 / 14", color: "text-green-600" },
+              { label: "Communities Tracked", value: "23", color: "text-[#003865]" },
+              { label: "Training Courses", value: "31 active", color: "text-[#003865]" },
+              { label: "Goals In Progress", value: "18 / 24", color: "text-amber-600" },
+              { label: "Policy Docs Ready", value: "7 drafts", color: "text-[#003865]" },
+              { label: "Sniff Check Rate", value: "98.4%", color: "text-green-600" },
+              { label: "Open Equity Alerts", value: "3 critical", color: "text-red-600" },
+              { label: "DWRS 2026 Readiness", value: "67%", color: "text-amber-600" }
             ].map((stat, i) => (
               <div key={i} className="flex items-center gap-3">
-                <div className={`${stat.color} flex-shrink-0`}>{stat.icon}</div>
                 <span className="text-sm text-muted-foreground flex-1">{stat.label}</span>
                 <span className={`text-sm font-semibold ${stat.color}`}>{stat.value}</span>
               </div>

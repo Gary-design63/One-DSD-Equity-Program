@@ -12,6 +12,7 @@ import {
   RefreshCw,
   Info
 } from "lucide-react";
+import { EditableText } from "@/components/EditableText";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -100,9 +101,11 @@ export default function EquityMetricsPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Equity Metrics Dashboard</h1>
+          <h1 className="text-2xl font-bold">
+            <EditableText id="metrics.title" defaultValue="Equity Metrics Dashboard" />
+          </h1>
           <p className="text-muted-foreground mt-1">
-            Disaggregated disability services data · Minnesota DSD · Q4 2024
+            <EditableText id="metrics.subtitle" defaultValue="Disaggregated disability services data · Minnesota DSD · Q4 2024" />
           </p>
         </div>
         <div className="flex gap-2">

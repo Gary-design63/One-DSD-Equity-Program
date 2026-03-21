@@ -13,6 +13,7 @@ import {
   Users,
   Filter
 } from "lucide-react";
+import { EditableText } from "@/components/EditableText";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -264,9 +265,11 @@ export default function GoalsPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Operational Goals</h1>
+          <h1 className="text-2xl font-bold">
+            <EditableText id="goals.title" defaultValue="Operational Goals" />
+          </h1>
           <p className="text-muted-foreground mt-1">
-            {goals.length} goals · {critical} critical · Equity-aligned OKRs
+            <EditableText id="goals.subtitle" defaultValue={`${goals.length} goals · ${critical} critical · Equity-aligned OKRs`} />
           </p>
         </div>
         <Button className="gap-2">

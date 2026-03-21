@@ -14,6 +14,7 @@ import {
   Shield,
   ChevronRight
 } from "lucide-react";
+import { EditableText } from "@/components/EditableText";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -167,9 +168,11 @@ export default function PolicyPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Policy Documents</h1>
+          <h1 className="text-2xl font-bold">
+            <EditableText id="policy.title" defaultValue="Policy Documents" />
+          </h1>
           <p className="text-muted-foreground mt-1">
-            Equity-aligned policy library · Sniff Check verified · Draft-ready outputs
+            <EditableText id="policy.subtitle" defaultValue="Equity-aligned policy library · Sniff Check verified · Draft-ready outputs" />
           </p>
         </div>
         <Button className="gap-2">
