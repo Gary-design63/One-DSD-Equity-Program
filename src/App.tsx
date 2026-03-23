@@ -20,6 +20,7 @@ import KnowledgeBasePage from "@/pages/KnowledgeBasePage";
 import WorkflowsPage from "@/pages/WorkflowsPage";
 import TemplatesPage from "@/pages/TemplatesPage";
 import EquityAssist from "@/components/EquityAssist";
+import EquityAssistPage from "@/pages/EquityAssistPage";
 
 interface NavItem {
   label: string;
@@ -31,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
   // Operations
   { label: "Dashboard",          path: "/",          group: "Operations" },
   { label: "Agents",             path: "/agents",    group: "Operations" },
+  { label: "Equity Assist",      path: "/equity-assist", group: "Operations" },
   // Analysis
   { label: "Equity Metrics",     path: "/metrics",   group: "Analysis" },
   { label: "Policy Documents",   path: "/policy",    group: "Analysis" },
@@ -245,6 +247,7 @@ function AppShell() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/agents" element={<AgentsPage />} />
             <Route path="/agents/:agentId" element={<AgentChat />} />
+            <Route path="/equity-assist" element={<EquityAssistPage />} />
             <Route path="/metrics" element={<EquityMetricsPage />} />
             <Route path="/community" element={<CommunityPage />} />
             <Route path="/training" element={<TrainingPage />} />
