@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { callAIStream } from "@/core/aiProvider";
 import { runL1Check } from "@/core/SniffCheckEngine";
-import { marked } from 'marked';
 
 /* ------------------------------------------------------------------ */
 /*  TYPES                                                              */
@@ -333,11 +332,44 @@ export default function EquityAssistPage() {
   };
 
   const formatContent = (text: string): string => {
-    try {
-      return marked(text, { gfm: true, breaks: true }) as string;
-    } catch {
-      return text;
-    }
+    let html = text;
+    // Escape HTML entities
+    html = html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    // Horizontal rules
+    html = html.replace(/^---+$/gm, '<hr class="my-4 border-gray-300"/>');
+    // Tables: detect markdown table blocks and convert them
+    html = html.replace(/((?:^\|.+\|$\n?)+)/gm, (tableBlock: string) => {
+      const rows = tableBlock.trim().split('\n').filter((r: string) => r.trim());
+      if (rows.length < 2) return tableBlock;
+      const isSep = (r: string) => /^[\s|:-]+$/.test(r.replace(/[^|:-\s]/g, ''));
+      let headerEnd = -1;
+      for (let i = 0; i < rows.length; i++) { if (isSep(rows[i])) { headerEnd = i; break; } }
+      let out = '<div class="overflow-x-auto my-4"><table class="min-w-full text-sm border-collapse border border-gray-300">';
+      rows.forEach((row: string, idx: number) => {
+        if (isSep(row)) return;
+        const cells = row.split('|').map((c: string) => c.trim()).filter((c: string, i: number, a: string[]) => i > 0 && i < a.length - 1 || (a.length === 2 && i === 0));
+        const isHead = headerEnd > 0 && idx < headerEnd;
+        const tag = isHead ? 'th' : 'td';
+        const cls = isHead ? 'bg-gray-100 font-semibold px-3 py-2 border border-gray-300 text-left' : 'px-3 py-2 border border-gray-300';
+        out += '<tr>' + cells.map((c: string) => `<${tag} class="${cls}">${c}</${tag}>`).join('') + '</tr>';
+      });
+      out += '</table></div>';
+      return out;
+    });
+    // Headings
+    html = html.replace(/^### (.+)$/gm, '<h4 class="text-sm font-semibold mt-4 mb-1 text-gray-900">$1</h4>');
+    html = html.replace(/^## (.+)$/gm, '<h3 class="text-base font-semibold mt-5 mb-2 text-gray-900">$1</h3>');
+    html = html.replace(/^# (.+)$/gm, '<h2 class="text-lg font-bold mt-6 mb-2 text-gray-900">$1</h2>');
+    // Bold and italic
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    // Lists
+    html = html.replace(/^- (.+)$/gm, '<li class="ml-4 mb-1">$1</li>');
+    html = html.replace(/^(\d+)\. (.+)$/gm, '<li class="ml-4 mb-1"><span class="font-medium">$1.</span> $2</li>');
+    // Paragraphs
+    html = html.replace(/\n{2,}/g, '<br/><br/>');
+    html = html.replace(/\n/g, '<br/>');
+    return html;
   };
 
   const filteredDocs = kbFilter === "All" ? KB_DOCUMENTS : KB_DOCUMENTS.filter(d => d.category === kbFilter);
