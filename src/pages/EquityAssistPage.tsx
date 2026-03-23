@@ -162,6 +162,8 @@ You must follow Minnesota Department of Human Services writing standards in all 
 10. Data presentation — always contextualize numbers. Say "12% of Black participants compared to 22% of white participants" rather than just listing percentages.
 11. Actionable recommendations — every analysis must end with specific, measurable next steps. Do not give vague suggestions.
 12. Cultural responsiveness — name communities respectfully using their preferred terminology. Acknowledge historical context when discussing disparities.
+`;
+
 
 /* ------------------------------------------------------------------ */
 /*  COMPONENT                                                          */
@@ -198,7 +200,9 @@ export default function EquityAssistPage() {
       ? RESEARCH_AGENTS.filter(a => selectedAgents.includes(a.id))
       : RESEARCH_AGENTS;
     const mode = researchMode === "deep" ? "DEEP RESEARCH MODE" : "STANDARD MODE";
-    return `\n[${mode}]\n[Knowledge Sources: ${docs.map(d => d.title).join(", ")}]\n[Agent Domains: ${agents.map(a => `${a.name} (${a.domain})`).join(", ")}]\n`;
+        const docNames = docs.map(d => d.title).join(", ");
+        const agentNames = agents.map(a => a.name + " (" + a.domain + ")").join(", ");
+        return "\n[" + mode + "]\n[Knowledge Sources: " + docNames + "]\n[Agent Domains: " + agentNames + "]\n";
   }, [selectedDocs, selectedAgents, researchMode]);
 
   const sendMessage = useCallback(async (text?: string) => {
