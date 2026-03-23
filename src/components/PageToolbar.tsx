@@ -12,7 +12,7 @@ export function PageToolbar({ title }: PageToolbarProps) {
   const { isEditing, toggleEditing, handleSave, handleDownload, handleUpload } = useEditContext();
   const uploadRef = useRef<HTMLInputElement>(null);
 
-  const handleExport = () => {
+  const handleDownload = () => {
     handleDownload();
     toast.success(`${title} data exported`);
   };
@@ -55,8 +55,8 @@ export function PageToolbar({ title }: PageToolbarProps) {
         }}
       />
 
-      <Button size="sm" variant="outline" onClick={handleExport} className="text-xs h-7">
-        Export
+      <Button size="sm" variant="outline" onClick={handleDownload} className="text-xs h-7">
+        Download
       </Button>
     </div>
   );
