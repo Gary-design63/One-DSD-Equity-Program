@@ -272,7 +272,7 @@ export const META_SKILLS_FRAMEWORK: MetaSkill[] = [
     domain: "M5",
     domainName: "Strategic Operations and Capacity Building",
     name: "Agentic Work Amplification",
-    description: "Deploying AI and automation to multiply equity program capacity",
+    description: "Deploying automation to multiply equity program capacity",
     applicationGuidance: "Identify highest-value tasks for automation; preserve human judgment for relationship and values decisions",
     equityRelevance: "Technology should democratize capacity; resource-constrained equity offices need force multipliers"
   },
