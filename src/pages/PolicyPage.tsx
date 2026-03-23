@@ -1,20 +1,6 @@
 import React, { useState } from "react";
-import {
-  FileText,
-  Plus,
-  Search,
-  Filter,
-  Download,
-  ExternalLink,
-  Clock,
-  CheckCircle2,
-  AlertTriangle,
-  Edit,
-  Eye,
-  Shield,
-  ChevronRight
-} from "lucide-react";
 import { EditableText } from "@/components/EditableText";
+import { PageToolbar } from "@/components/PageToolbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -125,18 +111,18 @@ const policyDocs = [
 ];
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  draft: { label: "Draft", color: "bg-amber-100 text-amber-700", icon: <Edit className="h-3.5 w-3.5" /> },
-  review: { label: "In Review", color: "bg-blue-100 text-blue-700", icon: <Eye className="h-3.5 w-3.5" /> },
-  published: { label: "Published", color: "bg-green-100 text-green-700", icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
-  approved: { label: "Approved", color: "bg-teal-100 text-teal-700", icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
+  draft: { label: "Draft", color: "bg-amber-100 text-amber-700", icon: null },
+  review: { label: "In Review", color: "bg-blue-100 text-blue-700", icon: null },
+  published: { label: "Published", color: "bg-green-100 text-green-700", icon: <span className="text-xs">{"✓"}</span> },
+  approved: { label: "Approved", color: "bg-teal-100 text-teal-700", icon: <span className="text-xs">{"✓"}</span> },
   archived: { label: "Archived", color: "bg-gray-100 text-gray-600", icon: null }
 };
 
 const sniffStatusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  PASS: { label: "Sniff: Pass", color: "text-green-600", icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
-  WARNING: { label: "Sniff: Warning", color: "text-amber-600", icon: <AlertTriangle className="h-3.5 w-3.5" /> },
-  FAIL: { label: "Sniff: Fail", color: "text-red-600", icon: <AlertTriangle className="h-3.5 w-3.5" /> },
-  REVIEW_REQUIRED: { label: "Sniff: L3 Required", color: "text-purple-600", icon: <Shield className="h-3.5 w-3.5" /> }
+  PASS: { label: "Sniff: Pass", color: "text-green-600", icon: <span className="text-xs">{"✓"}</span> },
+  WARNING: { label: "Sniff: Warning", color: "text-amber-600", icon: <span className="text-xs">{"!"}</span> },
+  FAIL: { label: "Sniff: Fail", color: "text-red-600", icon: <span className="text-xs">{"!"}</span> },
+  REVIEW_REQUIRED: { label: "Sniff: L3 Required", color: "text-purple-600", icon: null }
 };
 
 const typeLabels: Record<string, string> = {
@@ -176,10 +162,12 @@ export default function PolicyPage() {
           </p>
         </div>
         <Button className="gap-2">
-          <Plus className="h-4 w-4" />
+          <span>+</span>
           New Document
         </Button>
       </div>
+
+      <PageToolbar title="Policy Documents" />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -219,12 +207,10 @@ export default function PolicyPage() {
           {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search documents..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -248,7 +234,7 @@ export default function PolicyPage() {
                 <CardContent className="p-4">
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-lg bg-[#003865]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <FileText className="h-5 w-5 text-[#003865]" />
+                      <span className="text-[#003865] font-semibold text-sm">DOC</span>
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -284,18 +270,17 @@ export default function PolicyPage() {
 
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="h-3.5 w-3.5" />
                           Updated {doc.lastUpdated}
                         </div>
                         <div className="flex gap-2">
                           <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
-                            <Eye className="h-3.5 w-3.5" /> View
+                            View
                           </Button>
                           <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
-                            <Download className="h-3.5 w-3.5" /> Export
+                            Export
                           </Button>
                           <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
-                            <Edit className="h-3.5 w-3.5" /> Edit
+                            Edit
                           </Button>
                         </div>
                       </div>
@@ -381,12 +366,11 @@ export default function PolicyPage() {
             <CardContent>
               <div className="flex flex-wrap gap-4 text-sm">
                 <span className="flex items-center gap-2">
-                  <ExternalLink className="h-4 w-4 text-[#003865]" />
                   <a href={DSD_RESOURCES.disabilityHub.url} className="text-[#003865] hover:underline" target="_blank" rel="noopener noreferrer">
                     {DSD_RESOURCES.disabilityHub.url}
                   </a>
                 </span>
-                <span className="text-muted-foreground">📞 {DSD_RESOURCES.disabilityHub.phone}</span>
+                <span className="text-muted-foreground">{DSD_RESOURCES.disabilityHub.phone}</span>
               </div>
               <div className="mt-3 flex flex-wrap gap-1">
                 {DSD_RESOURCES.disabilityHub.languages.map(lang => (

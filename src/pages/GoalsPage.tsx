@@ -1,19 +1,6 @@
 import React, { useState } from "react";
-import {
-  Target,
-  Plus,
-  Search,
-  Clock,
-  CheckCircle2,
-  AlertTriangle,
-  TrendingUp,
-  ChevronRight,
-  MoreHorizontal,
-  Calendar,
-  Users,
-  Filter
-} from "lucide-react";
 import { EditableText } from "@/components/EditableText";
+import { PageToolbar } from "@/components/PageToolbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -213,11 +200,11 @@ const goals: Goal[] = [
 ];
 
 const statusConfig: Record<GoalStatus, { label: string; color: string; icon: React.ReactNode }> = {
-  not_started: { label: "Not Started", color: "bg-gray-100 text-gray-700", icon: <Clock className="h-3.5 w-3.5" /> },
-  in_progress: { label: "In Progress", color: "bg-blue-100 text-blue-700", icon: <TrendingUp className="h-3.5 w-3.5" /> },
-  on_track: { label: "On Track", color: "bg-green-100 text-green-700", icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
-  at_risk: { label: "At Risk", color: "bg-amber-100 text-amber-700", icon: <AlertTriangle className="h-3.5 w-3.5" /> },
-  completed: { label: "Completed", color: "bg-teal-100 text-teal-700", icon: <CheckCircle2 className="h-3.5 w-3.5" /> },
+  not_started: { label: "Not Started", color: "bg-gray-100 text-gray-700", icon: null },
+  in_progress: { label: "In Progress", color: "bg-blue-100 text-blue-700", icon: <span className="text-xs">{"↑"}</span> },
+  on_track: { label: "On Track", color: "bg-green-100 text-green-700", icon: <span className="text-xs">{"✓"}</span> },
+  at_risk: { label: "At Risk", color: "bg-amber-100 text-amber-700", icon: <span className="text-xs">{"!"}</span> },
+  completed: { label: "Completed", color: "bg-teal-100 text-teal-700", icon: <span className="text-xs">{"✓"}</span> },
   cancelled: { label: "Cancelled", color: "bg-gray-100 text-gray-400", icon: null }
 };
 
@@ -273,10 +260,12 @@ export default function GoalsPage() {
           </p>
         </div>
         <Button className="gap-2">
-          <Plus className="h-4 w-4" />
+          <span>+</span>
           Add Goal
         </Button>
       </div>
+
+      <PageToolbar title="Operational Goals" />
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -309,12 +298,10 @@ export default function GoalsPage() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search goals..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -389,10 +376,10 @@ export default function GoalsPage() {
 
                   <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
-                      <Users className="h-3 w-3" /> {goal.owner}
+                      {goal.owner}
                     </span>
                     <span className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" /> Due: {goal.targetDate}
+                      Due: {goal.targetDate}
                     </span>
                     <span className="text-xs bg-muted px-2 py-0.5 rounded">
                       {categoryLabels[goal.category]}
@@ -402,7 +389,7 @@ export default function GoalsPage() {
                   <Progress value={goal.progressPercent} className="h-1.5 mt-2" />
                 </div>
 
-                <ChevronRight className={`h-4 w-4 text-muted-foreground flex-shrink-0 transition-transform ${expandedGoal === goal.id ? "rotate-90" : ""}`} />
+                <span className={`text-muted-foreground flex-shrink-0 transition-transform ${expandedGoal === goal.id ? "rotate-90" : ""}`}>{">"}</span>
               </div>
 
               {/* Expanded view */}
@@ -470,7 +457,6 @@ export default function GoalsPage() {
 
       {filtered.length === 0 && (
         <div className="text-center py-16 text-muted-foreground">
-          <Target className="h-12 w-12 mx-auto mb-4 opacity-30" />
           <p className="text-lg font-medium">No goals found</p>
           <p className="text-sm mt-1">Try adjusting your search or filters</p>
         </div>

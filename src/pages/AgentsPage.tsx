@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { EditableText } from "@/components/EditableText";
+import { PageToolbar } from "@/components/PageToolbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -259,6 +260,8 @@ export default function AgentsPage() {
           <EditableText id="agents.subtitle" defaultValue={`${AGENTS.length} specialized agents · All governed by Primary Directive · 39 Meta-Skills applied universally`} />
         </p>
       </div>
+
+      <PageToolbar title="Agents" />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
