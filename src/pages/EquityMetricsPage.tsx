@@ -101,7 +101,7 @@ export default function EquityMetricsPage() {
             Refresh
           </Button>
           <Button variant="outline" size="sm" className="text-xs">
-            Export
+            Download
           </Button>
         </div>
       </div>
