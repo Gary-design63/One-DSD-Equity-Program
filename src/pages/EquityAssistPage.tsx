@@ -333,11 +333,11 @@ export default function EquityAssistPage() {
   };
 
   const formatContent = (text: string): string => {
-    marked.setOptions({
-      gfm: true,
-      breaks: true
-    });
-    return marked.parse(text) as string;
+    try {
+      return marked(text, { gfm: true, breaks: true }) as string;
+    } catch {
+      return text;
+    }
   };
 
   const filteredDocs = kbFilter === "All" ? KB_DOCUMENTS : KB_DOCUMENTS.filter(d => d.category === kbFilter);
