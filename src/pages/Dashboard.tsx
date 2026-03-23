@@ -1,10 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
 import { EditableText } from "@/components/EditableText";
+import { PageToolbar } from "@/components/PageToolbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
   AreaChart,
@@ -22,51 +21,52 @@ import {
   Legend
 } from "recharts";
 
-// Mock data for dashboard
-const communityAccessData = [
-  { month: "Jul", black: 32, indigenous: 28, latinx: 38, asian: 45, white: 58 },
-  { month: "Aug", black: 33, indigenous: 29, latinx: 39, asian: 46, white: 59 },
-  { month: "Sep", black: 34, indigenous: 28, latinx: 40, asian: 47, white: 60 },
-  { month: "Oct", black: 35, indigenous: 30, latinx: 41, asian: 47, white: 61 },
-  { month: "Nov", black: 36, indigenous: 31, latinx: 42, asian: 48, white: 61 },
-  { month: "Dec", black: 37, indigenous: 31, latinx: 43, asian: 49, white: 62 },
-  { month: "Jan", black: 38, indigenous: 32, latinx: 44, asian: 50, white: 62 }
+// Mock data for dashboard — Logic Model aligned
+const serviceAccessData = [
+  { month: "Jul", urban: 32, rural: 28, suburban: 38, tribal: 22, statewide: 40 },
+  { month: "Aug", urban: 33, rural: 29, suburban: 39, tribal: 23, statewide: 41 },
+  { month: "Sep", urban: 34, rural: 28, suburban: 40, tribal: 24, statewide: 42 },
+  { month: "Oct", urban: 35, rural: 30, suburban: 41, tribal: 25, statewide: 43 },
+  { month: "Nov", urban: 36, rural: 31, suburban: 42, tribal: 26, statewide: 43 },
+  { month: "Dec", urban: 37, rural: 31, suburban: 43, tribal: 27, statewide: 44 },
+  { month: "Jan", urban: 38, rural: 32, suburban: 44, tribal: 28, statewide: 45 }
 ];
 
-const employmentOutcomeData = [
-  { name: "Black/AA", value: 18, fill: "#1e3a5f" },
-  { name: "Indigenous", value: 14, fill: "#78BE21" },
-  { name: "Latinx", value: 22, fill: "#003865" },
-  { name: "Asian", value: 31, fill: "#4a90d9" },
-  { name: "White", value: 41, fill: "#94a3b8" }
+const outcomesByDomain = [
+  { name: "Community", value: 34, fill: "#003865" },
+  { name: "Home", value: 29, fill: "#78BE21" },
+  { name: "Occupation", value: 22, fill: "#1e3a5f" },
+  { name: "Independence", value: 38, fill: "#4a90d9" },
+  { name: "Connections", value: 31, fill: "#2d6a4f" },
+  { name: "Equity", value: 27, fill: "#94a3b8" }
 ];
 
-const waitlistTrend = [
-  { month: "Jul '24", total: 4820, bipoc: 2240 },
-  { month: "Aug '24", total: 4910, bipoc: 2290 },
-  { month: "Sep '24", total: 4780, bipoc: 2180 },
-  { month: "Oct '24", total: 4650, bipoc: 2100 },
-  { month: "Nov '24", total: 4590, bipoc: 2070 },
-  { month: "Dec '24", total: 4510, bipoc: 2020 },
-  { month: "Jan '25", total: 4480, bipoc: 2000 }
+const outputsTrend = [
+  { month: "Jul '24", documents: 120, trainings: 45 },
+  { month: "Aug '24", documents: 135, trainings: 52 },
+  { month: "Sep '24", documents: 128, trainings: 48 },
+  { month: "Oct '24", documents: 142, trainings: 55 },
+  { month: "Nov '24", documents: 150, trainings: 60 },
+  { month: "Dec '24", documents: 148, trainings: 58 },
+  { month: "Jan '25", documents: 155, trainings: 63 }
 ];
 
 const recentAgentActivity = [
   { agent: "Policy Drafting Agent", action: "Generated Olmstead Progress Brief", time: "12 min ago", status: "success" },
-  { agent: "Equity Data Agent", action: "Analyzed CADI waitlist by race/ethnicity", time: "34 min ago", status: "success" },
+  { agent: "Equity Data Agent", action: "Analyzed service access across all communities", time: "34 min ago", status: "success" },
   { agent: "Training Design Agent", action: "Created Cultural Responsiveness Module 3", time: "1 hr ago", status: "success" },
-  { agent: "Community Outreach Agent", action: "Drafted East African community newsletter", time: "2 hr ago", status: "warning" },
+  { agent: "Community Outreach Agent", action: "Drafted community engagement newsletter", time: "2 hr ago", status: "warning" },
   { agent: "DWRS Rate Agent", action: "Calculated 2026 rate impacts by county", time: "3 hr ago", status: "success" }
 ];
 
 const activeGoals = [
-  { title: "Reduce BIPOC waiver waitlist by 15%", progress: 34, status: "on_track", dueDate: "Jun 2025" },
-  { title: "Launch Disability Hub MN Somali outreach", progress: 72, status: "on_track", dueDate: "Mar 2025" },
+  { title: "Improve service access equity across all communities", progress: 34, status: "on_track", dueDate: "Jun 2025" },
+  { title: "Expand Disability Hub MN community outreach", progress: 72, status: "on_track", dueDate: "Mar 2025" },
   { title: "Complete DSP workforce equity training", progress: 48, status: "at_risk", dueDate: "Apr 2025" },
-  { title: "Publish disaggregated employment data", progress: 89, status: "on_track", dueDate: "Feb 2025" }
+  { title: "Publish service outcome data across all populations", progress: 89, status: "on_track", dueDate: "Feb 2025" }
 ];
 
-const COLORS = ["#003865", "#78BE21", "#1e3a5f", "#4a90d9", "#94a3b8"];
+const COLORS = ["#003865", "#78BE21", "#1e3a5f", "#4a90d9", "#2d6a4f", "#94a3b8"];
 
 const statusColors: Record<string, string> = {
   success: "text-green-600",
@@ -81,6 +81,43 @@ const goalStatusConfig: Record<string, { label: string; color: string }> = {
   completed: { label: "Completed", color: "bg-blue-100 text-blue-700" }
 };
 
+const logicModelSteps = [
+  {
+    title: "Inputs",
+    color: "bg-[#003865]",
+    items: ["150-180 DSD staff", "8 agents", "30 community profiles", "Training portfolio", "Supabase infrastructure"]
+  },
+  {
+    title: "Activities",
+    color: "bg-[#1e3a5f]",
+    items: ["Equity analyses", "Community engagement", "Training delivery", "Consultation routing", "Document formatting"]
+  },
+  {
+    title: "Outputs",
+    color: "bg-[#2d6a4f]",
+    items: ["Reviewed documents", "Trained staff", "Formatted materials", "Logged decisions"]
+  },
+  {
+    title: "Outcomes",
+    color: "bg-[#78BE21]",
+    items: ["Equitable services", "Community trust", "Culturally responsive practices"]
+  },
+  {
+    title: "Impact",
+    color: "bg-[#4a90d9]",
+    items: ["Minnesotans with disabilities live where they choose with the supports they need"]
+  }
+];
+
+const choiceDomains = [
+  { name: "Community", description: "Participation in community life", color: "border-[#003865] bg-[#003865]/5" },
+  { name: "Home", description: "Living where and with whom you choose", color: "border-[#1e3a5f] bg-[#1e3a5f]/5" },
+  { name: "Occupation", description: "Meaningful work and daily activities", color: "border-[#2d6a4f] bg-[#2d6a4f]/5" },
+  { name: "Independence", description: "Self-determination and personal agency", color: "border-[#78BE21] bg-[#78BE21]/5" },
+  { name: "Connections", description: "Relationships and social networks", color: "border-[#4a90d9] bg-[#4a90d9]/5" },
+  { name: "Equity", description: "Fair access for all communities served", color: "border-[#94a3b8] bg-[#94a3b8]/10" }
+];
+
 export default function Dashboard() {
   return (
     <div className="p-6 space-y-6">
@@ -94,86 +131,76 @@ export default function Dashboard() {
         </p>
       </div>
 
+      <PageToolbar />
+
       {/* Primary Directive banner */}
       <div className="bg-[#003865] text-white rounded-lg p-4 flex items-start gap-3">
         <div>
           <p className="text-sm font-medium">
-            <EditableText id="dashboard.directive.title" defaultValue="Primary Directive Active" className="text-white" />
+            <EditableText id="dashboard.directive.title" defaultValue="Primary Directive Active — CHOICE Framework" className="text-white" />
           </p>
           <p className="text-xs text-white/70 mt-0.5">
-            <EditableText id="dashboard.directive.body" defaultValue={"\"Every agent, every process, every output must multiply the Consultant's capacity, never divide it.\" — 39 Meta-Skills · 6 Domains · 14 Agents · Sniff Check L1/L2/L3 Active"} className="text-white/70" />
+            <EditableText id="dashboard.directive.body" defaultValue={"\"Every agent, every process, every output must multiply the Consultant's capacity, never divide it.\" — Logic Model · CHOICE Domains (Community, Home, Occupation, Independence, Connections, Equity) · 8 Agents · Sniff Check L1/L2/L3 Active"} className="text-white/70" />
           </p>
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground font-medium"><EditableText id="kpi.waivers.label" defaultValue="Active Waivers" /></span>
-            </div>
-            <div className="text-3xl font-bold text-foreground"><EditableText id="kpi.waivers.value" defaultValue="47,284" /></div>
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className="text-xs text-green-600 font-medium"><EditableText id="kpi.waivers.change" defaultValue="+2.3% from last quarter" /></span>
-            </div>
-            <div className="mt-2 text-xs text-muted-foreground"><EditableText id="kpi.waivers.note" defaultValue="CADI · DD · BI · EW · AC" /></div>
-          </CardContent>
-        </Card>
+      {/* Logic Model Flow */}
+      <div>
+        <h2 className="text-lg font-semibold text-foreground mb-3">Logic Model Flow</h2>
+        <div className="flex flex-col lg:flex-row items-stretch gap-0">
+          {logicModelSteps.map((step, i) => (
+            <React.Fragment key={step.title}>
+              <Card className="flex-1 min-w-0">
+                <CardHeader className={`${step.color} text-white rounded-t-lg py-2 px-3`}>
+                  <CardTitle className="text-sm font-semibold">{step.title}</CardTitle>
+                </CardHeader>
+                <CardContent className="p-3">
+                  <ul className="space-y-1">
+                    {step.items.map((item, j) => (
+                      <li key={j} className="text-xs text-muted-foreground leading-snug">• {item}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+              {i < logicModelSteps.length - 1 && (
+                <div className="flex items-center justify-center lg:px-1 py-1 lg:py-0">
+                  <span className="text-muted-foreground text-lg font-bold select-none lg:rotate-0 rotate-90">&rarr;</span>
+                </div>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
 
-        <Card>
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground font-medium"><EditableText id="kpi.waitlist.label" defaultValue="Waitlist (Total)" /></span>
-            </div>
-            <div className="text-3xl font-bold text-foreground"><EditableText id="kpi.waitlist.value" defaultValue="4,480" /></div>
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className="text-xs text-green-600 font-medium"><EditableText id="kpi.waitlist.change" defaultValue="-7.1% from last quarter" /></span>
-            </div>
-            <div className="mt-2 text-xs text-muted-foreground"><EditableText id="kpi.waitlist.note" defaultValue="45% BIPOC community members" /></div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground font-medium"><EditableText id="kpi.employment.label" defaultValue="Employment Rate" /></span>
-            </div>
-            <div className="text-3xl font-bold text-foreground"><EditableText id="kpi.employment.value" defaultValue="31.2%" /></div>
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className="text-xs text-amber-600 font-medium"><EditableText id="kpi.employment.change" defaultValue="+1.8% — gap remains" /></span>
-            </div>
-            <div className="mt-2 text-xs text-muted-foreground"><EditableText id="kpi.employment.note" defaultValue="BIPOC: 23.4% vs White: 41.2%" /></div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground font-medium"><EditableText id="kpi.tasks.label" defaultValue="Agent Tasks Today" /></span>
-            </div>
-            <div className="text-3xl font-bold text-foreground"><EditableText id="kpi.tasks.value" defaultValue="127" /></div>
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className="text-xs text-green-600 font-medium"><EditableText id="kpi.tasks.change" defaultValue="98.4% sniff check pass rate" /></span>
-            </div>
-            <div className="mt-2 text-xs text-muted-foreground"><EditableText id="kpi.tasks.note" defaultValue="14 active agents" /></div>
-          </CardContent>
-        </Card>
+      {/* CHOICE Domains */}
+      <div>
+        <h2 className="text-lg font-semibold text-foreground mb-3">CHOICE Domains</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {choiceDomains.map((domain) => (
+            <Card key={domain.name} className={`border-2 ${domain.color}`}>
+              <CardContent className="p-3 text-center">
+                <p className="text-sm font-semibold text-foreground">{domain.name}</p>
+                <p className="text-xs text-muted-foreground mt-1">{domain.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
 
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Community access trend */}
+        {/* Service access trend */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-base">Waiver Access Rate by Race/Ethnicity</CardTitle>
+            <CardTitle className="text-base">Service Access Rate by Region</CardTitle>
             <CardDescription>
               Per 1,000 people with disabilities in population · Jan 2024–Jan 2025
             </CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={communityAccessData}>
+              <AreaChart data={serviceAccessData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
@@ -181,20 +208,20 @@ export default function Dashboard() {
                   contentStyle={{ fontSize: 12, borderRadius: 8 }}
                   formatter={(value: number, name: string) => [`${value}`, name]}
                 />
-                <Area type="monotone" dataKey="white" name="White" stroke="#94a3b8" fill="#94a3b820" strokeWidth={2} />
-                <Area type="monotone" dataKey="asian" name="Asian/PI" stroke="#4a90d9" fill="#4a90d915" strokeWidth={2} />
-                <Area type="monotone" dataKey="latinx" name="Latinx" stroke="#78BE21" fill="#78BE2115" strokeWidth={2} />
-                <Area type="monotone" dataKey="black" name="Black/AA" stroke="#003865" fill="#00386515" strokeWidth={2.5} />
-                <Area type="monotone" dataKey="indigenous" name="Indigenous" stroke="#1e3a5f" fill="#1e3a5f10" strokeWidth={2} strokeDasharray="4 2" />
+                <Area type="monotone" dataKey="statewide" name="Statewide" stroke="#94a3b8" fill="#94a3b820" strokeWidth={2} />
+                <Area type="monotone" dataKey="suburban" name="Suburban" stroke="#4a90d9" fill="#4a90d915" strokeWidth={2} />
+                <Area type="monotone" dataKey="urban" name="Urban" stroke="#78BE21" fill="#78BE2115" strokeWidth={2} />
+                <Area type="monotone" dataKey="rural" name="Rural" stroke="#003865" fill="#00386515" strokeWidth={2.5} />
+                <Area type="monotone" dataKey="tribal" name="Tribal Nations" stroke="#1e3a5f" fill="#1e3a5f10" strokeWidth={2} strokeDasharray="4 2" />
               </AreaChart>
             </ResponsiveContainer>
             <div className="mt-2 flex flex-wrap gap-3 justify-center">
               {[
-                { label: "White", color: "#94a3b8" },
-                { label: "Asian/PI", color: "#4a90d9" },
-                { label: "Latinx", color: "#78BE21" },
-                { label: "Black/AA", color: "#003865" },
-                { label: "Indigenous", color: "#1e3a5f" }
+                { label: "Statewide", color: "#94a3b8" },
+                { label: "Suburban", color: "#4a90d9" },
+                { label: "Urban", color: "#78BE21" },
+                { label: "Rural", color: "#003865" },
+                { label: "Tribal Nations", color: "#1e3a5f" }
               ].map(item => (
                 <div key={item.label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <div className="w-3 h-2 rounded-sm" style={{ backgroundColor: item.color }} />
@@ -205,31 +232,31 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Employment outcomes */}
+        {/* Outcomes by CHOICE Domain */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Competitive Employment Outcomes</CardTitle>
-            <CardDescription>% working-age waiver participants employed · Jan 2025</CardDescription>
+            <CardTitle className="text-base">Outcomes by CHOICE Domain</CardTitle>
+            <CardDescription>Progress score across all communities served · Jan 2025</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={employmentOutcomeData} layout="vertical" margin={{ left: 20, right: 20 }}>
+              <BarChart data={outcomesByDomain} layout="vertical" margin={{ left: 20, right: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 11 }} domain={[0, 50]} />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={65} />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={85} />
                 <Tooltip
                   contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                  formatter={(value: number) => [`${value}%`, "Employment rate"]}
+                  formatter={(value: number) => [`${value}`, "Progress score"]}
                 />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                  {employmentOutcomeData.map((entry, index) => (
+                  {outcomesByDomain.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-            <div className="mt-3 p-2.5 bg-amber-50 rounded text-xs text-amber-800">
-              23-point gap: Black (18%) vs White (41%). Employment First priority.
+            <div className="mt-3 p-2.5 bg-blue-50 rounded text-xs text-blue-800">
+              All six CHOICE domains tracked across every community served equally.
             </div>
           </CardContent>
         </Card>
@@ -237,21 +264,21 @@ export default function Dashboard() {
 
       {/* Middle row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Waitlist trend */}
+        {/* Outputs trend */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Waitlist Reduction Progress</CardTitle>
-            <CardDescription>Total and BIPOC waitlist members · Olmstead Goal</CardDescription>
+            <CardTitle className="text-base">Outputs Trend</CardTitle>
+            <CardDescription>Documents reviewed and trainings delivered · Logic Model Outputs</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={waitlistTrend}>
+              <BarChart data={outputsTrend}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                <Bar dataKey="total" name="Total Waitlist" fill="#003865" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="bipoc" name="BIPOC Members" fill="#78BE21" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="documents" name="Documents Reviewed" fill="#003865" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="trainings" name="Trainings Delivered" fill="#78BE21" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -262,12 +289,10 @@ export default function Dashboard() {
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle className="text-base">Active Operational Goals</CardTitle>
-              <CardDescription>Equity program priorities</CardDescription>
+              <CardDescription>Logic Model outcome targets</CardDescription>
             </div>
-            <Link to="/goals">
-              <Button variant="ghost" size="sm" className="text-xs gap-1">
-                View all <ArrowRight className="h-3 w-3" />
-              </Button>
+            <Link to="/goals" className="text-xs text-[#003865] hover:underline font-medium">
+              View all &gt;
             </Link>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -301,10 +326,8 @@ export default function Dashboard() {
               <CardTitle className="text-base">Recent Agent Activity</CardTitle>
               <CardDescription>Agent outputs from the last 4 hours</CardDescription>
             </div>
-            <Link to="/agents">
-              <Button variant="ghost" size="sm" className="text-xs gap-1">
-                All agents <ArrowRight className="h-3 w-3" />
-              </Button>
+            <Link to="/agents" className="text-xs text-[#003865] hover:underline font-medium">
+              View all &gt;
             </Link>
           </CardHeader>
           <CardContent>
@@ -336,14 +359,14 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="space-y-4">
             {[
-              { label: "Active Agents", value: "14 / 14", color: "text-green-600" },
-              { label: "Communities Tracked", value: "23", color: "text-[#003865]" },
+              { label: "Active Agents", value: "8 / 8", color: "text-green-600" },
+              { label: "Community Profiles", value: "30", color: "text-[#003865]" },
               { label: "Training Courses", value: "31 active", color: "text-[#003865]" },
               { label: "Goals In Progress", value: "18 / 24", color: "text-amber-600" },
-              { label: "Policy Docs Ready", value: "7 drafts", color: "text-[#003865]" },
+              { label: "Documents Reviewed", value: "155 this month", color: "text-[#003865]" },
               { label: "Sniff Check Rate", value: "98.4%", color: "text-green-600" },
-              { label: "Open Equity Alerts", value: "3 critical", color: "text-red-600" },
-              { label: "DWRS 2026 Readiness", value: "67%", color: "text-amber-600" }
+              { label: "CHOICE Domains Active", value: "6 / 6", color: "text-green-600" },
+              { label: "DSD Staff Supported", value: "162", color: "text-[#003865]" }
             ].map((stat, i) => (
               <div key={i} className="flex items-center gap-3">
                 <span className="text-sm text-muted-foreground flex-1">{stat.label}</span>

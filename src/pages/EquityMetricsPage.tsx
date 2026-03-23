@@ -1,18 +1,6 @@
 import React, { useState } from "react";
-import {
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  AlertTriangle,
-  BarChart2,
-  Users,
-  Briefcase,
-  Clock,
-  Download,
-  RefreshCw,
-  Info
-} from "lucide-react";
 import { EditableText } from "@/components/EditableText";
+import { PageToolbar } from "@/components/PageToolbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -89,9 +77,9 @@ function DisparityBadge({ ratio }: { ratio: number }) {
 }
 
 function TrendIcon({ trend }: { trend: "improving" | "stable" | "worsening" }) {
-  if (trend === "improving") return <TrendingUp className="h-4 w-4 text-green-500" />;
-  if (trend === "worsening") return <TrendingDown className="h-4 w-4 text-red-500" />;
-  return <Minus className="h-4 w-4 text-muted-foreground" />;
+  if (trend === "improving") return <span className="text-green-500 text-xs font-bold">↑</span>;
+  if (trend === "worsening") return <span className="text-red-500 text-xs font-bold">↓</span>;
+  return <span className="text-muted-foreground text-xs">−</span>;
 }
 
 export default function EquityMetricsPage() {
@@ -109,20 +97,20 @@ export default function EquityMetricsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="gap-2">
-            <RefreshCw className="h-4 w-4" />
-            <span className="hidden sm:inline">Refresh</span>
+          <Button variant="outline" size="sm" className="text-xs">
+            Refresh
           </Button>
-          <Button variant="outline" size="sm" className="gap-2">
-            <Download className="h-4 w-4" />
-            <span className="hidden sm:inline">Export</span>
+          <Button variant="outline" size="sm" className="text-xs">
+            Export
           </Button>
         </div>
       </div>
 
+      <PageToolbar title="Equity Metrics" />
+
       {/* Alert banner */}
       <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-        <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+        <span className="text-red-600 font-bold flex-shrink-0">!</span>
         <div>
           <p className="text-sm font-medium text-red-800">3 Critical Equity Alerts</p>
           <p className="text-xs text-red-700 mt-0.5">
@@ -411,7 +399,7 @@ export default function EquityMetricsPage() {
                 ))}
               </div>
               <div className="mt-4 p-3 bg-muted rounded text-xs text-muted-foreground">
-                <Info className="h-3.5 w-3.5 inline mr-1" />
+                <span className="font-bold mr-1">i</span>
                 Target: 95%+ fulfillment for all languages. Oromo is critically below target at 79.7%. DHS Title VI obligation.
               </div>
             </CardContent>

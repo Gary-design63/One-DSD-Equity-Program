@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
 import { EditableText } from "@/components/EditableText";
+import { PageToolbar } from "@/components/PageToolbar";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,8 @@ export default function SettingsPage() {
           <EditableText id="settings.subtitle" defaultValue="Configuration for the One DSD Equity and Inclusion Agentic Operations Platform" />
         </p>
       </div>
+
+      <PageToolbar title="Settings" />
 
       <Tabs defaultValue="api">
         <TabsList>
@@ -92,7 +94,7 @@ export default function SettingsPage() {
                       onClick={() => setShowApiKey(!showApiKey)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
-                      {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showApiKey ? "Hide" : "Show"}
                     </button>
                   </div>
                 </div>
@@ -165,7 +167,7 @@ export default function SettingsPage() {
                       onClick={() => setShowSupabaseKey(!showSupabaseKey)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
-                      {showSupabaseKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showSupabaseKey ? "Hide" : "Show"}
                     </button>
                   </div>
                 </div>
@@ -287,7 +289,7 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-3 text-sm">
               {[
-                { label: "Platform Version", value: "1.0.0" },
+                { label: "Platform Version", value: "3.0" },
                 { label: "Model", value: "claude-opus-4-5" },
                 { label: "Active Agents", value: "14" },
                 { label: "Meta-Skills", value: "39 (6 domains)" },
@@ -352,9 +354,31 @@ export default function SettingsPage() {
 
               <Separator />
 
+              <div>
+                <p className="font-semibold mb-2">CHOICE Domains</p>
+                <p className="text-xs text-muted-foreground mb-3">The 6 domains that define the CHOICE framework for equity-aligned disability services:</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {[
+                    { name: "Community", description: "Building belonging and social connections" },
+                    { name: "Home", description: "Safe, accessible, self-directed living" },
+                    { name: "Occupation", description: "Meaningful work and Employment First" },
+                    { name: "Independence", description: "Autonomy, self-determination, and choice" },
+                    { name: "Connections", description: "Relationships, family, and cultural ties" },
+                    { name: "Equity", description: "Eliminating disparities across all domains" }
+                  ].map((domain, i) => (
+                    <div key={i} className="p-3 bg-[#003865]/5 rounded-lg">
+                      <p className="text-sm font-semibold text-[#003865]">{domain.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{domain.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
               <p className="text-xs text-muted-foreground">
                 Built for Minnesota Department of Human Services · Disability Services Division ·
-                One DSD Equity Program · 2025
+                One DSD Equity Program · 2026
               </p>
             </CardContent>
           </Card>

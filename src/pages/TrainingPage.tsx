@@ -1,19 +1,6 @@
 import React, { useState } from "react";
-import {
-  BookOpen,
-  Clock,
-  Users,
-  Star,
-  ChevronRight,
-  Search,
-  Plus,
-  CheckCircle2,
-  PlayCircle,
-  Filter,
-  Globe,
-  Award
-} from "lucide-react";
 import { EditableText } from "@/components/EditableText";
+import { PageToolbar } from "@/components/PageToolbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -299,10 +286,12 @@ export default function TrainingPage() {
           </p>
         </div>
         <Button className="gap-2">
-          <Plus className="h-4 w-4" />
+          <span>+</span>
           Create Course
         </Button>
       </div>
+
+      <PageToolbar title="Equity Training and Education" />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -342,12 +331,10 @@ export default function TrainingPage() {
           {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search courses..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
               />
             </div>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
@@ -406,19 +393,19 @@ export default function TrainingPage() {
                   {/* Meta */}
                   <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5" /> {course.duration} min
+                      {course.duration} min
                     </span>
                     <span className="flex items-center gap-1">
-                      <Users className="h-3.5 w-3.5" /> {course.completions.toLocaleString()} completed
+                      {course.completions.toLocaleString()} completed
                     </span>
                     {course.rating > 0 && (
                       <span className="flex items-center gap-1">
-                        <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" /> {course.rating}
+                        {course.rating}
                       </span>
                     )}
                     {course.certification && (
                       <span className="flex items-center gap-1 text-[#78BE21]">
-                        <Award className="h-3.5 w-3.5" /> Certificate
+                        Certificate
                       </span>
                     )}
                   </div>
@@ -427,7 +414,7 @@ export default function TrainingPage() {
                   <div className="flex flex-wrap gap-1">
                     {course.languages.map(lang => (
                       <span key={lang} className="text-xs bg-muted px-2 py-0.5 rounded flex items-center gap-1">
-                        <Globe className="h-3 w-3" /> {lang}
+                        {lang}
                       </span>
                     ))}
                   </div>
@@ -454,7 +441,6 @@ export default function TrainingPage() {
 
                   <div className="mt-auto pt-2">
                     <Button size="sm" className="w-full gap-2" variant={course.status === "draft" ? "outline" : "default"}>
-                      <PlayCircle className="h-4 w-4" />
                       {course.status === "draft" ? "Preview Draft" : "Launch Course"}
                     </Button>
                   </div>
@@ -465,7 +451,6 @@ export default function TrainingPage() {
 
           {filtered.length === 0 && (
             <div className="text-center py-16 text-muted-foreground">
-              <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-30" />
               <p className="text-lg font-medium">No courses found</p>
               <p className="text-sm mt-1">Try adjusting your search or filters</p>
             </div>
@@ -479,7 +464,7 @@ export default function TrainingPage() {
                 <CardHeader>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-[#003865]/10 flex items-center justify-center">
-                      <BookOpen className="h-5 w-5 text-[#003865]" />
+                      <span className="text-[#003865] font-semibold text-sm">LP</span>
                     </div>
                     <div>
                       <CardTitle className="text-sm font-semibold">{path.name}</CardTitle>
@@ -490,17 +475,17 @@ export default function TrainingPage() {
                 <CardContent>
                   <div className="flex gap-4 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
-                      <BookOpen className="h-4 w-4" /> {path.courses} courses
+                      {path.courses} courses
                     </span>
                     <span className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" /> {Math.round(path.duration / 60)}h {path.duration % 60}m
+                      {Math.round(path.duration / 60)}h {path.duration % 60}m
                     </span>
                     <span className="flex items-center gap-1">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" /> {path.completions} completed
+                      <span className="text-green-500">✓</span> {path.completions} completed
                     </span>
                   </div>
                   <Button size="sm" className="w-full mt-4 gap-2">
-                    Start Path <ChevronRight className="h-4 w-4" />
+                    Start Path <span>{">"}</span>
                   </Button>
                 </CardContent>
               </Card>
