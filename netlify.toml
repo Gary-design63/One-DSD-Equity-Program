@@ -14,4 +14,4 @@
 [context.production.environment]
   VITE_SUPABASE_URL        = ""   # set in Netlify dashboard → Environment variables
   VITE_SUPABASE_ANON_KEY   = ""
-  VITE_ANTHROPIC_API_KEY   = ""
+  # ANTHROPIC_API_KEY is server-side only — set in Netlify dashboard → Environment variables

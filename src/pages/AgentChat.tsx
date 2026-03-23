@@ -229,19 +229,6 @@ export default function AgentChat() {
     setIsLoading(true);
     setStreamingContent("");
 
-    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      const errorMsg: ConversationMessage = {
-        id: `assistant-${Date.now()}`,
-        role: "assistant",
-        content: "API key not configured. Please add VITE_ANTHROPIC_API_KEY to your .env file to enable agent responses. The platform is fully built and ready — just needs your Anthropic API key.",
-        timestamp: new Date().toISOString()
-      };
-      setMessages(prev => [...prev, errorMsg]);
-      setIsLoading(false);
-      return;
-    }
-
     try {
       const aiMessages = [...messages, userMsg].map(m => ({
         role: m.role as "user" | "assistant",

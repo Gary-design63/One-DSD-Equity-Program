@@ -1,6 +1,6 @@
 // One DSD Equity Platform - AI Provider
-// Anthropic Claude integration with PRD-governed system prompt
-// All calls governed by Primary Directive and Meta-Skills Framework
+// Routes all AI calls through /api/chat serverless function
+// API key stays server-side — never exposed to the browser
 
 import { PRIMARY_DIRECTIVE } from "./PrimaryDirective";
 import { applyToAllAgents } from "./MetaSkillsFramework";
@@ -110,25 +110,17 @@ Use line breaks and indentation for structure. Use CAPS or spacing for emphasis 
   ].join("\n\n");
 }
 
-// Main AI call function using Anthropic Claude via direct API
+// Main AI call function — routes through /api/chat serverless function
 export async function callAI(
   messages: AIMessage[],
   options: AIRequestOptions
 ): Promise<AIResponse> {
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-
-  if (!apiKey) {
-    throw new Error(
-      "VITE_ANTHROPIC_API_KEY is not set. Please add your Anthropic API key to the .env file."
-    );
-  }
-
   const systemPrompt = buildSystemPrompt(options);
   const maxTokens = options.maxTokens || 4096;
   const temperature = options.temperature ?? 0.3;
 
   const requestBody = {
-    model: "claude-opus-4-5",
+    model: "claude-sonnet-4-5-20250514",
     max_tokens: maxTokens,
     temperature,
     system: systemPrompt,
@@ -139,22 +131,15 @@ export async function callAI(
   };
 
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch("/api/chat", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
-      throw new Error(
-        `Anthropic API error: ${response.status} - ${errorData?.error?.message || response.statusText}`
-      );
+      const errorData = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(errorData?.error || `API error: ${response.status}`);
     }
 
     const data = await response.json();
@@ -172,7 +157,7 @@ export async function callAI(
             outputTokens: data.usage.output_tokens
           }
         : undefined,
-      model: data.model || "claude-opus-4-5",
+      model: data.model || "claude-sonnet-4-5-20250514",
       agentId: options.agentId,
       timestamp: new Date().toISOString()
     };
@@ -180,30 +165,22 @@ export async function callAI(
     if (error instanceof Error) {
       throw error;
     }
-    throw new Error("Unknown error calling Anthropic API");
+    throw new Error("Unknown error calling AI API");
   }
 }
 
-// Streaming version of AI call
+// Streaming version — routes through /api/chat serverless function
 export async function callAIStream(
   messages: AIMessage[],
   options: AIRequestOptions,
   onChunk: (chunk: AIStreamChunk) => void
 ): Promise<AIResponse> {
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-
-  if (!apiKey) {
-    throw new Error(
-      "VITE_ANTHROPIC_API_KEY is not set. Please add your Anthropic API key to the .env file."
-    );
-  }
-
   const systemPrompt = buildSystemPrompt(options);
   const maxTokens = options.maxTokens || 4096;
   const temperature = options.temperature ?? 0.3;
 
   const requestBody = {
-    model: "claude-opus-4-5",
+    model: "claude-sonnet-4-5-20250514",
     max_tokens: maxTokens,
     temperature,
     system: systemPrompt,
@@ -214,22 +191,15 @@ export async function callAIStream(
     stream: true
   };
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+  const response = await fetch("/api/chat", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true"
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(requestBody)
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
-    throw new Error(
-      `Anthropic API error: ${response.status} - ${errorData?.error?.message || response.statusText}`
-    );
+    const errorData = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(errorData?.error || `API error: ${response.status}`);
   }
 
   const reader = response.body?.getReader();
@@ -240,7 +210,7 @@ export async function callAIStream(
   let fullContent = "";
   let inputTokens = 0;
   let outputTokens = 0;
-  let model = "claude-opus-4-5";
+  let model = "claude-sonnet-4-5-20250514";
 
   const decoder = new TextDecoder();
 

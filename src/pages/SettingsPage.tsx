@@ -13,14 +13,12 @@ import { Badge } from "@/components/ui/badge";
 import { isSupabaseAvailable } from "@/core/supabaseClient";
 
 export default function SettingsPage() {
-  const [showApiKey, setShowApiKey] = useState(false);
   const [showSupabaseKey, setShowSupabaseKey] = useState(false);
   const [sniffL1Enabled, setSniffL1Enabled] = useState(true);
   const [sniffL2Enabled, setSniffL2Enabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
 
-  const apiKeyConfigured = Boolean(import.meta.env.VITE_ANTHROPIC_API_KEY);
   const supabaseConfigured = isSupabaseAvailable();
 
   const handleSaveSettings = () => {
@@ -54,63 +52,29 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle className="text-base">Anthropic API Key</CardTitle>
               <CardDescription>
-                Required for all agent functionality. Get your key at console.anthropic.com.
+                Required for all agent functionality. The key is stored securely server-side.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3 p-3 rounded-lg border">
-                {apiKeyConfigured ? (
-                  <>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-green-700">API Key Configured</p>
-                      <p className="text-xs text-muted-foreground">VITE_ANTHROPIC_API_KEY is set in your environment</p>
-                    </div>
-                    <Badge className="bg-green-100 text-green-700 border-0">Active</Badge>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-amber-700">API Key Not Configured</p>
-                      <p className="text-xs text-muted-foreground">Add VITE_ANTHROPIC_API_KEY to your .env file to enable agents</p>
-                    </div>
-                    <Badge className="bg-amber-100 text-amber-700 border-0">Required</Badge>
-                  </>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="api-key-input">API Key</Label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Input
-                      id="api-key-input"
-                      type={showApiKey ? "text" : "password"}
-                      placeholder="sk-ant-api03-..."
-                      defaultValue={apiKeyConfigured ? "••••••••••••••••••••••••••" : ""}
-                      className="pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowApiKey(!showApiKey)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      {showApiKey ? "Hide" : "Show"}
-                    </button>
-                  </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-green-700">Secure Server-Side Configuration</p>
+                  <p className="text-xs text-muted-foreground">API key is stored in Vercel environment variables — never exposed to the browser</p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Store your API key in .env as <code className="bg-muted px-1 rounded">VITE_ANTHROPIC_API_KEY=your_key_here</code>
-                </p>
+                <Badge className="bg-green-100 text-green-700 border-0">Secure</Badge>
               </div>
 
               <div className="bg-[#003865]/5 rounded-lg p-3 text-xs">
-                <p className="font-medium mb-1">How to set up your API key:</p>
+                <p className="font-medium mb-1">How to configure your API key:</p>
                 <ol className="space-y-1 text-muted-foreground list-decimal list-inside">
-                  <li>Create a file named <code className="bg-muted px-1 rounded">.env</code> in the project root</li>
-                  <li>Add: <code className="bg-muted px-1 rounded">VITE_ANTHROPIC_API_KEY=sk-ant-api03-...</code></li>
-                  <li>Restart the development server</li>
-                  <li>All 14 agents will be ready to use</li>
+                  <li>Go to your Vercel project dashboard</li>
+                  <li>Navigate to Settings → Environment Variables</li>
+                  <li>Add: <code className="bg-muted px-1 rounded">ANTHROPIC_API_KEY=sk-ant-api03-...</code></li>
+                  <li>Redeploy — all 14 agents will be ready to use</li>
                 </ol>
+                <p className="mt-2 text-muted-foreground">
+                  Get your key at <code className="bg-muted px-1 rounded">console.anthropic.com</code> → API Keys
+                </p>
               </div>
             </CardContent>
           </Card>
