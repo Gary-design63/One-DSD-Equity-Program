@@ -67,8 +67,11 @@ export function EditProvider({ children }: { children: React.ReactNode }) {
       try {
         const parsed = JSON.parse(e.target?.result as string);
         if (typeof parsed === "object" && parsed !== null) {
-          setContent(prev => ({ ...prev, ...parsed }));
-          localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...content, ...parsed }));
+          setContent(prev => {
+            const merged = { ...prev, ...parsed };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+            return merged;
+          });
           toast.success("Content uploaded and applied");
         } else {
           toast.error("Invalid file format — expected JSON object");
@@ -78,7 +81,7 @@ export function EditProvider({ children }: { children: React.ReactNode }) {
       }
     };
     reader.readAsText(file);
-  }, [content]);
+  }, []);
 
   return (
     <EditContext.Provider value={{ isEditing, toggleEditing, getValue, setValue, handleSave, handleDownload, handleUpload }}>
