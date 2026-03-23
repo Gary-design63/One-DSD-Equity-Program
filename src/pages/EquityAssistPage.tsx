@@ -210,21 +210,27 @@ export default function EquityAssistPage() {
 
     try {
       const context = buildResearchContext();
-      const systemPrompt = EQUITY_ASSIST_SYSTEM + context;
       const history = messages.map(m => ({ role: m.role, content: m.content }));
       history.push({ role: "user", content });
 
       let fullResponse = "";
       await callAIStream(
-        systemPrompt,
         history,
-        (chunk: string) => {
-          fullResponse += chunk;
-          setMessages(prev =>
-            prev.map(m => m.id === assistantId ? { ...m, content: fullResponse } : m)
-          );
+        {
+          agentId: "equity-assist",
+          agentName: "Equity Assist",
+          agentPurpose: "AI-powered equity research for disability services",
+          maxTokens: 16000,
+          systemPromptAddendum: EQUITY_ASSIST_SYSTEM + context,
         },
-        { model: "claude-opus-4-5", maxTokens: 16000 }
+        (chunk) => {
+          if (!chunk.done) {
+            fullResponse += chunk.delta;
+            setMessages(prev =>
+              prev.map(m => m.id === assistantId ? { ...m, content: fullResponse } : m)
+            );
+          }
+        }
       );
 
       try {
