@@ -19,6 +19,7 @@ import CompletionChecklist from "@/pages/CompletionChecklist";
 import KnowledgeBasePage from "@/pages/KnowledgeBasePage";
 import WorkflowsPage from "@/pages/WorkflowsPage";
 import TemplatesPage from "@/pages/TemplatesPage";
+import EquityAssist from "@/components/EquityAssist";
 
 interface NavItem {
   label: string;
@@ -262,6 +263,7 @@ function AppShell() {
           Minnesota Department of Human Services · Disability Services Division · v3.0 · 2026
         </footer>
       </div>
+      <EquityAssist />
       <Toaster position="top-right" richColors toastOptions={{ classNames: { toast: "font-sans" } }} />
     </div>
   );
