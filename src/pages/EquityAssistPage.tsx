@@ -110,7 +110,7 @@ const RESEARCH_TEMPLATES: ResearchTemplate[] = [
 /* ------------------------------------------------------------------ */
 /*  SYSTEM PROMPT                                                      */
 /* ------------------------------------------------------------------ */
-const EQUITY_ASSIST_SYSTEM = `You are Equity Assist, the AI research engine for the Minnesota Department of Human Services, Disability Services Division (DSD) One DSD Equity Program.
+const EQUITY_ASSIST_SYSTEM = `You are Equity Assist, the equity research engine for the Minnesota Department of Human Services, Disability Services Division (DSD) One DSD Equity Program.
 
 YOUR ROLE:
 You are a specialized equity research assistant that helps DSD staff analyze policies, identify disparities, assess compliance, and develop equity-centered recommendations for disability services.
@@ -162,6 +162,7 @@ export default function EquityAssistPage() {
   const [activeTab, setActiveTab] = useState<"templates" | "knowledge" | "agents">("templates");
   const [kbFilter, setKbFilter] = useState("All");
   const [showTopPanel, setShowTopPanel] = useState(false);
+  const [copiedMsgIdx, setCopiedMsgIdx] = useState<number | null>(null);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -219,7 +220,7 @@ export default function EquityAssistPage() {
         {
           agentId: "equity-assist",
           agentName: "Equity Assist",
-          agentPurpose: "AI-powered equity research for disability services",
+          agentPurpose: "equity research for disability services",
           maxTokens: 16000,
           systemPromptAddendum: EQUITY_ASSIST_SYSTEM + context,
         },
@@ -274,7 +275,7 @@ export default function EquityAssistPage() {
     toast.success("Session cleared");
   };
 
-  const exportResearch = () => {
+  const downloadResearch = () => {
     if (messages.length === 0) { toast.error("No research to export"); return; }
     const header = `EQUITY ASSIST RESEARCH EXPORT\nDate: ${new Date().toLocaleDateString()}\nMode: ${researchMode === "deep" ? "Deep Research" : "Standard"}\nKnowledge Sources: ${selectedDocs.length || KB_DOCUMENTS.length} documents\nAgent Domains: ${selectedAgents.length || RESEARCH_AGENTS.length} agents\nSniff Check: L1 Active\n${"=".repeat(80)}\n\n`;
     const body = messages.map(m => {
@@ -294,7 +295,17 @@ export default function EquityAssistPage() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast.success("Research exported");
+    toast.success("Research downloaded");
+  };
+
+  const copyMessage = (text: string, idx: number) => {
+    const tmp = document.createElement("div");
+    tmp.innerHTML = text;
+    const plain = tmp.textContent || tmp.innerText || "";
+    navigator.clipboard.writeText(plain).then(() => {
+      setCopiedMsgIdx(idx);
+      setTimeout(() => setCopiedMsgIdx(null), 2000);
+    });
   };
 
   const toggleDoc = (id: string) => {
@@ -373,8 +384,8 @@ export default function EquityAssistPage() {
               </button>
               {messages.length > 0 && (
                 <>
-                  <button onClick={exportResearch} className="px-2.5 py-1 text-xs rounded-md border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors">
-                    Export
+                  <button onClick={downloadResearch} className="px-2.5 py-1 text-xs rounded-md border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors">
+                    Download
                   </button>
                   <button onClick={clearSession} className="px-2.5 py-1 text-xs rounded-md border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors">
                     Clear
@@ -488,7 +499,7 @@ export default function EquityAssistPage() {
             <div className="flex flex-col items-center justify-center h-full text-center pt-16">
               <h1 className="text-2xl font-semibold text-gray-900 mb-2">Equity Assist</h1>
               <p className="text-gray-500 mb-8 max-w-md">
-                AI-powered equity research for the Minnesota DHS Disability Services Division. Select a template above or type your research query below.
+                equity research for the Minnesota DHS Disability Services Division. Select a template above or type your research query below.
               </p>
               <div className="grid grid-cols-2 gap-3 max-w-lg w-full">
                 {RESEARCH_TEMPLATES.slice(0, 4).map((t, i) => (
@@ -504,7 +515,7 @@ export default function EquityAssistPage() {
               </div>
             </div>
           ) : (
-            messages.map(msg => (
+            messages.map((msg, msgIdx) => (
               <div key={msg.id} className={cn("mb-6", msg.role === "user" ? "flex justify-end" : "")}>
                 {msg.role === "user" ? (
                   <div className="max-w-xl bg-blue-600 text-white rounded-2xl rounded-br-md px-4 py-3">
@@ -530,6 +541,15 @@ export default function EquityAssistPage() {
                       className="prose prose-sm max-w-none text-gray-800 leading-relaxed pl-8"
                       dangerouslySetInnerHTML={{ __html: formatContent(msg.content) }}
                     />
+                  {msg.role === "assistant" && !isStreaming && (
+                    <button
+                      onClick={() => copyMessage(msg.content, msgIdx)}
+                      className="mt-2 px-3 py-1 text-xs rounded border border-gray-300 hover:bg-gray-100 transition-colors"
+                      title="Copy response"
+                    >
+                      {copiedMsgIdx === msgIdx ? "Copied!" : "Copy"}
+                    </button>
+                  )}
                     {isStreaming && msg.id === messages[messages.length - 1]?.id && msg.content === "" && (
                       <div className="pl-8 mt-2">
                         <div className="flex gap-1">
