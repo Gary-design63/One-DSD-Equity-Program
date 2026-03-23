@@ -9,20 +9,20 @@ import { callAIStream } from "@/core/aiProvider";
 import { runL1Check } from "@/core/SniffCheckEngine";
 import type { ConversationMessage, SniffCheckResult } from "@/types";
 
-const EQUITY_ASSIST_PURPOSE = `Primary research and consultation interface â an exponential extension of the Equity and Inclusion Operations Consultant. You ground every response in real data, real frameworks, and real community context.
+const EQUITY_ASSIST_PURPOSE = `Primary research and consultation interface — an exponential extension of the Equity and Inclusion Operations Consultant. You ground every response in real data, real frameworks, and real community context.
 
 CORE CAPABILITIES:
-1. COMMUNITY PROFILES â Demographics, cultural context, service gaps, language needs, partnership status for all Minnesota communities served
-2. EQUITY METRICS â Disaggregated data, disparity ratios, trend analysis, benchmark comparisons across race, ethnicity, language, ability, age
-3. POLICY DOCUMENTS â Current policies, equity impact assessments, compliance status, Olmstead Plan, HCBS Settings Rule
-4. TRAINING DATA â Staff competency levels, completion rates, curriculum gaps, cultural competency benchmarks
-5. KNOWLEDGE BASE â CLAS Standards, HCBS guidance, DHS Equity Analysis Toolkit (13-Point Equity Rubric), 6-Goal Operational Plan, 8-system DEIA Ecosystem
-6. CROSS-AGENT RESEARCH â Synthesize knowledge across all 14 specialized agents for comprehensive answers
+1. COMMUNITY PROFILES — Demographics, cultural context, service gaps, language needs, partnership status for all Minnesota communities served
+2. EQUITY METRICS — Disaggregated data, disparity ratios, trend analysis, benchmark comparisons across race, ethnicity, language, ability, age
+3. POLICY DOCUMENTS — Current policies, equity impact assessments, compliance status, Olmstead Plan, HCBS Settings Rule
+4. TRAINING DATA — Staff competency levels, completion rates, curriculum gaps, cultural competency benchmarks
+5. KNOWLEDGE BASE — CLAS Standards, HCBS guidance, DHS Equity Analysis Toolkit (13-Point Equity Rubric), 6-Goal Operational Plan, 8-system DEIA Ecosystem
+6. CROSS-AGENT RESEARCH — Synthesize knowledge across all 14 specialized agents for comprehensive answers
 
 CONSULTATION TIERS:
-- Tier 1 (Quick Guidance): Policy lookups, data points, framework references â respond immediately
-- Tier 2 (Analysis): Equity impact assessment, community context synthesis, disparity analysis â provide structured analysis
-- Tier 3 (Strategic): Multi-system recommendations, implementation planning, stakeholder mapping â provide comprehensive consultation
+- Tier 1 (Quick Guidance): Policy lookups, data points, framework references — respond immediately
+- Tier 2 (Analysis): Equity impact assessment, community context synthesis, disparity analysis — provide structured analysis
+- Tier 3 (Strategic): Multi-system recommendations, implementation planning, stakeholder mapping — provide comprehensive consultation
 
 RESPONSE PROTOCOL:
 1. Always identify which knowledge bases you are drawing from
@@ -34,12 +34,12 @@ RESPONSE PROTOCOL:
 
 You are backed by: DHS Equity Analysis Toolkit, CLAS Standards, HCBS Settings Rule, Minnesota community cultural profiles, CHOICE Framework, 6-Goal Operational Plan, 8-System DEIA Ecosystem, and the Sniff Check methodology.`;
 const QUICK_PROMPTS = [
-  { icon: "ð", label: "Disparity analysis", prompt: "Show me the current equity disparity data across all dimensions. What are the most critical gaps and what interventions should I prioritize?" },
-  { icon: "ð¥", label: "Community context", prompt: "Summarize the community profiles and cultural contexts I should be aware of for current DSD programs. Focus on service gaps and language needs." },
-  { icon: "ð", label: "Policy review", prompt: "What policies need equity review? Apply the Sniff Check methodology and 13-Point Equity Rubric to identify concerns." },
-  { icon: "ð¯", label: "Goal progress", prompt: "What is our progress on equity goals? Identify barriers and recommend actions aligned to the DEIA 3-year implementation plan." },
-  { icon: "ð", label: "CLAS Standards", prompt: "How are we performing against CLAS Standards? Where are the gaps in culturally and linguistically appropriate services?" },
-  { icon: "ð¤", label: "Agent overview", prompt: "Give me a status overview of all active agents and their domains. How should I leverage them to multiply my capacity this week?" },
+  { icon: "📊", label: "Disparity analysis", prompt: "Show me the current equity disparity data across all dimensions. What are the most critical gaps and what interventions should I prioritize?" },
+  { icon: "👥", label: "Community context", prompt: "Summarize the community profiles and cultural contexts I should be aware of for current DSD programs. Focus on service gaps and language needs." },
+  { icon: "📋", label: "Policy review", prompt: "What policies need equity review? Apply the Sniff Check methodology and 13-Point Equity Rubric to identify concerns." },
+  { icon: "🎯", label: "Goal progress", prompt: "What is our progress on equity goals? Identify barriers and recommend actions aligned to the DEIA 3-year implementation plan." },
+  { icon: "📖", label: "CLAS Standards", prompt: "How are we performing against CLAS Standards? Where are the gaps in culturally and linguistically appropriate services?" },
+  { icon: "🤖", label: "Agent overview", prompt: "Give me a status overview of all active agents and their domains. How should I leverage them to multiply my capacity this week?" },
 ];
 
 export default function EquityAssist() {
@@ -106,7 +106,7 @@ export default function EquityAssist() {
           agentId: "equity-assist",
           agentName: "Equity Assist",
           agentPurpose: EQUITY_ASSIST_PURPOSE,
-          systemPromptAddendum: `Current page context: ${location.pathname}\nThe user is the Equity and Inclusion Operations Consultant. You are their exponential extension â multiply their capacity across every domain.`
+          systemPromptAddendum: `Current page context: ${location.pathname}\nThe user is the Equity and Inclusion Operations Consultant. You are their exponential extension — multiply their capacity across every domain.`
         },
         (chunk) => {
           if (!chunk.done) {
@@ -171,7 +171,7 @@ export default function EquityAssist() {
         title="Open Equity Assist"
       >
         <div className="w-9 h-9 rounded-xl bg-[#78BE21]/20 border border-[#78BE21]/30 flex items-center justify-center">
-          <span className="text-lg">â¨</span>
+          <span className="text-lg">✨</span>
         </div>
         <div className="text-left">
           <span className="text-sm font-semibold block leading-tight">Equity Assist</span>
@@ -192,20 +192,20 @@ export default function EquityAssist() {
         <div className="fixed inset-0 bg-black/20 z-40" onClick={() => setIsOpen(false)} />
         <div className="fixed right-0 top-0 z-50 h-full w-16 bg-white shadow-2xl border-l flex flex-col items-center">
           <div className="w-full py-3 bg-[#003865] flex flex-col items-center gap-2">
-            <span className="text-lg">â¨</span>
+            <span className="text-lg">✨</span>
             <button
               onClick={() => setIsMinimized(false)}
               className="p-1 rounded hover:bg-white/10 text-white/70 hover:text-white text-xs"
               title="Expand"
             >
-              â
+              ◀
             </button>
             <button
               onClick={() => setIsOpen(false)}
               className="p-1 rounded hover:bg-white/10 text-white/70 hover:text-white text-xs"
               title="Close"
             >
-              â
+              ✕
             </button>
           </div>
         </div>
@@ -224,7 +224,7 @@ export default function EquityAssist() {
         <div className="flex items-center justify-between px-4 py-3 bg-[#003865] text-white">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-[#78BE21]/20 border border-[#78BE21]/30 flex items-center justify-center">
-              <span className="text-lg">â¨</span>
+              <span className="text-lg">✨</span>
             </div>
             <div>
               <h3 className="font-semibold text-sm">Equity Assist</h3>
@@ -237,21 +237,21 @@ export default function EquityAssist() {
               className="p-1.5 rounded-md hover:bg-white/10 transition-colors text-white/70 hover:text-white text-xs"
               title="New conversation"
             >
-              â»
+              ↻
             </button>
             <button
               onClick={() => setIsMinimized(true)}
               className="p-1.5 rounded-md hover:bg-white/10 transition-colors text-white/70 hover:text-white text-xs"
               title="Minimize"
             >
-              â
+              —
             </button>
             <button
               onClick={() => setIsOpen(false)}
               className="p-1.5 rounded-md hover:bg-white/10 transition-colors text-white/70 hover:text-white text-xs"
               title="Close"
             >
-              â
+              ✕
             </button>
           </div>
         </div>
@@ -262,7 +262,7 @@ export default function EquityAssist() {
               {/* Welcome */}
               <div className="text-center mb-5">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#003865] to-[#005a9e] mx-auto mb-3 flex items-center justify-center shadow-lg">
-                  <span className="text-2xl">â¨</span>
+                  <span className="text-2xl">✨</span>
                 </div>
                 <h4 className="font-semibold text-sm">Equity Assist</h4>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-w-xs mx-auto">
@@ -294,7 +294,7 @@ export default function EquityAssist() {
               {/* Capabilities */}
               <div className="mt-4 p-3 rounded-xl bg-muted/50 border">
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  <span className="font-semibold text-foreground">Research-backed responses</span> â Equity Assist draws from community profiles, equity metrics, policy documents, training data, CLAS Standards, HCBS guidance, and the full DHS Equity Analysis Toolkit. All guidance is grounded in Minnesota DSD context.
+                  <span className="font-semibold text-foreground">Research-backed responses</span> — Equity Assist draws from community profiles, equity metrics, policy documents, training data, CLAS Standards, HCBS guidance, and the full DHS Equity Analysis Toolkit. All guidance is grounded in Minnesota DSD context.
                 </p>
               </div>
             </div>
@@ -304,7 +304,7 @@ export default function EquityAssist() {
                 <div key={message.id} className={`flex gap-2.5 ${message.role === "user" ? "flex-row-reverse" : ""}`}>
                   {message.role === "assistant" && (
                     <div className="w-7 h-7 rounded-lg bg-[#78BE21]/15 flex-shrink-0 flex items-center justify-center mt-0.5">
-                      <span className="text-sm">â¨</span>
+                      <span className="text-sm">✨</span>
                     </div>
                   )}
                   <div className={cn(
@@ -322,7 +322,7 @@ export default function EquityAssist() {
               {isLoading && streamingContent && (
                 <div className="flex gap-2.5">
                   <div className="w-7 h-7 rounded-lg bg-[#78BE21]/15 flex-shrink-0 flex items-center justify-center mt-0.5">
-                    <span className="text-sm">â¨</span>
+                    <span className="text-sm">✨</span>
                   </div>
                   <div className="max-w-[85%] rounded-2xl px-3.5 py-2.5 bg-muted text-[13px] leading-relaxed">
                     <div className="whitespace-pre-wrap">{streamingContent}</div>
@@ -334,7 +334,7 @@ export default function EquityAssist() {
               {isLoading && !streamingContent && (
                 <div className="flex gap-2.5">
                   <div className="w-7 h-7 rounded-lg bg-[#78BE21]/15 flex-shrink-0 flex items-center justify-center mt-0.5">
-                    <span className="text-sm">â¨</span>
+                    <span className="text-sm">✨</span>
                   </div>
                   <div className="rounded-2xl px-3.5 py-2.5 bg-muted">
                     <span className="text-xs text-muted-foreground">Equity Assist is researching...</span>
@@ -367,7 +367,7 @@ export default function EquityAssist() {
             </Button>
           </div>
           <p className="text-[10px] text-muted-foreground mt-1.5 text-center">
-            DHS Equity Toolkit Â· CLAS Standards Â· HCBS Guidance Â· Sniff Check L1 Active
+            DHS Equity Toolkit · CLAS Standards · HCBS Guidance · Sniff Check L1 Active
           </p>
         </div>
       </div>
