@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { callAIStream } from "@/core/aiProvider";
 import { runL1Check } from "@/core/SniffCheckEngine";
+import { marked } from 'marked';
 
 /* ------------------------------------------------------------------ */
 /*  TYPES                                                              */
@@ -316,19 +317,12 @@ export default function EquityAssistPage() {
     setSelectedAgents(prev => prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]);
   };
 
-  const formatContent = (text: string) => {
-    let html = text
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-      .replace(/^### (.+)$/gm, '<h4 class="text-sm font-semibold mt-4 mb-1 text-gray-900">$1</h4>')
-      .replace(/^## (.+)$/gm, '<h3 class="text-base font-semibold mt-5 mb-2 text-gray-900">$1</h3>')
-      .replace(/^# (.+)$/gm, '<h2 class="text-lg font-bold mt-6 mb-2 text-gray-900">$1</h2>')
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/^- (.+)$/gm, '<li class="ml-4 mb-1">$1</li>')
-      .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-4 mb-1"><span class="font-medium">$1.</span> $2</li>')
-      .replace(/\n{2,}/g, '<br/><br/>')
-      .replace(/\n/g, '<br/>');
-    return html;
+  const formatContent = (text: string): string => {
+    marked.setOptions({
+      gfm: true,
+      breaks: true
+    });
+    return marked.parse(text) as string;
   };
 
   const filteredDocs = kbFilter === "All" ? KB_DOCUMENTS : KB_DOCUMENTS.filter(d => d.category === kbFilter);
