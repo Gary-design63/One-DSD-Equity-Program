@@ -1,136 +1,28 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { useLocation, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { EditableText } from "@/components/EditableText";
-import { PageToolbar } from "@/components/PageToolbar";
 import { callAIStream } from "@/core/aiProvider";
 import { runL1Check } from "@/core/SniffCheckEngine";
-import type { ConversationMessage, SniffCheckResult } from "@/types";
 
-/* ───────────────────────────────────────────────────────────────
-   KNOWLEDGE BASE — mirrors KnowledgeBasePage documents
-   ─────────────────────────────────────────────────────────────── */
+/* ------------------------------------------------------------------ */
+/*  TYPES                                                              */
+/* ------------------------------------------------------------------ */
 interface KBDocument {
   id: string;
   title: string;
   category: string;
-  authorityLevel: "federal" | "state" | "agency" | "division" | "operational";
+  authorityLevel: string;
   description: string;
   tags: string[];
   source: string;
 }
-
-const KB_DOCUMENTS: KBDocument[] = [
-  { id: "kb1", title: "Americans with Disabilities Act (ADA)", category: "Governing", authorityLevel: "federal", description: "Federal civil rights law — Title II applies to all DHS programs.", tags: ["ada", "civil-rights", "title-ii"], source: "U.S. DOJ" },
-  { id: "kb2", title: "Section 504 — Rehabilitation Act", category: "Governing", authorityLevel: "federal", description: "Prohibits disability discrimination in federally-funded programs.", tags: ["section-504", "rehabilitation-act"], source: "U.S. HHS" },
-  { id: "kb3", title: "HCBS Settings Final Rule", category: "Governing", authorityLevel: "federal", description: "CMS rule for person-centered, community-integrated settings. Compliance deadline March 2027.", tags: ["hcbs", "settings-rule", "cms"], source: "CMS" },
-  { id: "kb4", title: "Minnesota Olmstead Plan", category: "Governing", authorityLevel: "state", description: "State plan for community integration of people with disabilities.", tags: ["olmstead", "integration"], source: "Olmstead Implementation Office" },
-  { id: "kb5", title: "MN Statutes Ch. 256B — Medical Assistance", category: "Governing", authorityLevel: "state", description: "Statutory authority for CADI, DD, BI, and CAC waivers.", tags: ["statute", "waivers"], source: "MN Legislature" },
-  { id: "kb6", title: "DHS Equity Policy — EO 19-01", category: "Equity Tools", authorityLevel: "agency", description: "Agency-wide DEI policy implementing Governor's Executive Order.", tags: ["equity-policy", "dei"], source: "DHS Office of Equity" },
-  { id: "kb7", title: "Racial Equity Impact Assessment Tool", category: "Equity Tools", authorityLevel: "agency", description: "Standardized tool for assessing racial equity impacts of policies and programs.", tags: ["reia", "racial-equity"], source: "DHS Office of Equity" },
-  { id: "kb8", title: "CHOICE Framework Reference", category: "Equity Tools", authorityLevel: "division", description: "Six-domain equity framework: Community, Home, Occupation, Independence, Connections, Equity.", tags: ["choice", "framework"], source: "DSD Equity Operations" },
-  { id: "kb9", title: "Sniff Check Protocol — L1/L2/L3", category: "Equity Tools", authorityLevel: "division", description: "Three-tier QA protocol for equity, accuracy, and cultural responsiveness.", tags: ["sniff-check", "qa"], source: "DSD Equity Operations" },
-  { id: "kb10", title: "Logic Model — Equity Operations", category: "Data & Research", authorityLevel: "division", description: "Inputs - Activities - Outputs - Outcomes - Impact mapping.", tags: ["logic-model", "outcomes"], source: "DSD Equity Operations" },
-  { id: "kb11", title: "DWRS Rate Methodology", category: "Data & Research", authorityLevel: "state", description: "Disability Waiver Rate System methodology and annual adjustments.", tags: ["dwrs", "rates"], source: "DHS Rate Setting" },
-  { id: "kb12", title: "Title VI Language Access Plan", category: "Data & Research", authorityLevel: "agency", description: "Plan for meaningful access for people with limited English proficiency.", tags: ["title-vi", "language-access"], source: "DHS Civil Rights" },
-  { id: "kb13", title: "DSP Workforce Data Report 2024", category: "Data & Research", authorityLevel: "division", description: "Annual workforce demographics, wages, turnover, and equity metrics.", tags: ["dsp", "workforce"], source: "DSD Research" },
-  { id: "kb14", title: "Community Engagement Protocol", category: "Equity Tools", authorityLevel: "division", description: "Standard protocol for outreach, feedback, and community engagement.", tags: ["engagement", "outreach"], source: "DSD Equity Operations" },
-  { id: "kb15", title: "Disability Hub MN Partnership MOU", category: "Data & Research", authorityLevel: "agency", description: "MOU for coordinated service navigation and information sharing.", tags: ["disability-hub", "partnership"], source: "DHS DSD" },
-];
-
-const KB_CATEGORIES = ["All", "Governing", "Equity Tools", "Data & Research"];
-
-const AUTHORITY_COLORS: Record<string, string> = {
-  federal: "bg-red-100 text-red-700",
-  state: "bg-purple-100 text-purple-700",
-  agency: "bg-blue-100 text-blue-700",
-  division: "bg-teal-100 text-teal-700",
-  operational: "bg-gray-100 text-gray-700",
-};
-
-/* ───────────────────────────────────────────────────────────────
-   AGENTS — available for cross-agent research
-   ─────────────────────────────────────────────────────────────── */
 interface ResearchAgent {
   id: string;
   name: string;
   domain: string;
   icon: string;
 }
-
-const RESEARCH_AGENTS: ResearchAgent[] = [
-  { id: "policy", name: "Policy Drafting", domain: "Policy & compliance", icon: "" },
-  { id: "equity-data", name: "Equity Data", domain: "Disparities & metrics", icon: "" },
-  { id: "training", name: "Training Design", domain: "Staff development", icon: "" },
-  { id: "community", name: "Community Outreach", domain: "Engagement & partnerships", icon: "" },
-  { id: "dwrs", name: "DWRS Rate Analysis", domain: "Waiver rates & funding", icon: "" },
-  { id: "olmstead", name: "Olmstead Monitoring", domain: "Integration compliance", icon: "" },
-  { id: "employment", name: "Employment First", domain: "Competitive integrated employment", icon: "" },
-  { id: "waiver", name: "Waiver Navigator", domain: "CADI/DD/BI/EW navigation", icon: "" },
-  { id: "hcbs", name: "HCBS Compliance", domain: "Settings rule & CMS", icon: "" },
-  { id: "stakeholder", name: "Stakeholder Engagement", domain: "Advisory & input", icon: "" },
-  { id: "legislative", name: "Legislative Affairs", domain: "Bills & fiscal analysis", icon: "" },
-  { id: "hub", name: "Disability Hub MN", domain: "Service navigation", icon: "" },
-  { id: "comms", name: "Communications", domain: "Plain language & messaging", icon: "" },
-  { id: "meta-audit", name: "Meta-Audit & QA", domain: "Cross-system quality", icon: "" },
-];
-
-/* ───────────────────────────────────────────────────────────────
-   DEEP RESEARCH SYSTEM PROMPT
-   ─────────────────────────────────────────────────────────────── */
-const EQUITY_ASSIST_SYSTEM = `You are EQUITY ASSIST — the primary AI research and consultation interface for the One DSD Equity Program. You are an exponential extension of the Equity and Inclusion Operations Consultant, designed to multiply their capacity across every domain.
-
-ARCHITECTURE:
-You have access to the platform's full internal knowledge base and can synthesize information across all 14 specialized agents. You perform DEEP RESEARCH — not surface-level answers.
-
-INTERNAL KNOWLEDGE BASE (query these):
-- Governing Documents: ADA, Section 504, HCBS Settings Final Rule, Olmstead Plan, MN Statutes Ch. 256B
-- Equity Tools: DHS Equity Policy (EO 19-01), Racial Equity Impact Assessment Tool, CHOICE Framework, Sniff Check Protocol (L1/L2/L3), Community Engagement Protocol
-- Data & Research: Logic Model, DWRS Rate Methodology, Title VI Language Access Plan, DSP Workforce Data Report, Disability Hub MN Partnership MOU
-- Community Profiles: 30+ Minnesota community cultural profiles with demographics, service gaps, language needs
-- Equity Metrics: Disaggregated disparity data across race, ethnicity, language, ability, age
-
-CROSS-AGENT RESEARCH DOMAINS:
-When a question spans multiple domains, synthesize across these agent specializations:
-- Policy & Compliance (policy drafting, HCBS compliance, legislative affairs)
-- Data & Metrics (equity data, DWRS rates, workforce data)
-- Community & Engagement (community outreach, stakeholder engagement, Disability Hub)
-- Operations & Training (training design, employment first, waiver navigation)
-- Quality & Oversight (meta-audit, Olmstead monitoring, Sniff Check)
-
-CONSULTATION TIERS:
-- Tier 1 (Quick Guidance): Policy lookups, data points, framework references — respond with specific citations
-- Tier 2 (Analysis): Equity impact assessment, community context synthesis, disparity analysis — provide structured analysis with data
-- Tier 3 (Strategic): Multi-system recommendations, implementation planning, stakeholder mapping — comprehensive consultation with action items
-
-RESEARCH PROTOCOL:
-1. IDENTIFY which knowledge bases and agent domains are relevant
-2. SYNTHESIZE across sources — never answer from a single silo
-3. CITE specific documents, data points, and frameworks by name
-4. APPLY the equity lens: Who benefits? Who is burdened? Who was consulted? Who decides?
-5. RECOMMEND concrete next steps grounded in the DEIA 3-year plan phases
-6. FLAG insufficient data and recommend what data collection is needed
-7. CROSS-REFERENCE CLAS Standards and HCBS requirements where applicable
-
-RESPONSE FORMAT:
-- Start with a Research Summary header identifying sources consulted
-- Use structured sections for complex analyses
-- Include data citations with [Source: Document Name] format
-- End with Recommended Actions and any data gaps identified
-- Apply the 13-Point Equity Rubric lens to all policy recommendations
-
-You are backed by: DHS Equity Analysis Toolkit, CLAS Standards (15 standards), HCBS Settings Rule, Minnesota community cultural profiles, CHOICE Framework (6 domains), 6-Goal Operational Plan, 8-System DEIA Ecosystem, Sniff Check methodology (3 tiers), and the complete Meta-Skills Framework (39 skills across 6 domains).`;
-
-/* ───────────────────────────────────────────────────────────────
-   RESEARCH TEMPLATES
-   ─────────────────────────────────────────────────────────────── */
 interface ResearchTemplate {
   icon: string;
   label: string;
@@ -139,681 +31,570 @@ interface ResearchTemplate {
   agents: string[];
   kbDocs: string[];
 }
+interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: number;
+}
+interface SniffResult {
+  status: string;
+  flags: string[];
+}
 
-const RESEARCH_TEMPLATES: ResearchTemplate[] = [
-  {
-    icon: "",
-    label: "Equity Disparity Analysis",
-    tier: "Tier 2",
-    prompt: "Conduct a comprehensive equity disparity analysis across all service dimensions. Pull data from equity metrics, community profiles, and workforce reports. Identify the top 5 most critical gaps, analyze root causes using the 13-Point Equity Rubric, and recommend priority interventions aligned to the DEIA 3-year plan.",
-    agents: ["equity-data", "community", "meta-audit"],
-    kbDocs: ["kb7", "kb8", "kb13"],
-  },
-  {
-    icon: "",
-    label: "Policy Equity Review",
-    tier: "Tier 2",
-    prompt: "Perform a policy equity review using the Sniff Check methodology and Racial Equity Impact Assessment Tool. Which current policies need review? Apply the equity lens (who benefits, who is burdened, who was consulted, who decides) and cross-reference with CLAS Standards and HCBS requirements.",
-    agents: ["policy", "hcbs", "meta-audit"],
-    kbDocs: ["kb6", "kb7", "kb9"],
-  },
-  {
-    icon: "",
-    label: "Community Context Synthesis",
-    tier: "Tier 2",
-    prompt: "Synthesize the full community context for current DSD programs. Compile community profiles, cultural contexts, service gaps, language needs, and partnership status. Focus on underserved populations and communities with the widest disparity gaps. Include recommendations for targeted outreach.",
-    agents: ["community", "stakeholder", "hub"],
-    kbDocs: ["kb12", "kb14", "kb15"],
-  },
-  {
-    icon: "",
-    label: "DEIA Goal Progress Assessment",
-    tier: "Tier 3",
-    prompt: "Assess progress on all equity goals across the 6-Goal Operational Plan and DEIA 3-year implementation plan. For each goal: current status, barriers identified, data trends, and recommended accelerators. Include cross-system dependencies and stakeholder mapping.",
-    agents: ["equity-data", "olmstead", "meta-audit", "employment"],
-    kbDocs: ["kb4", "kb8", "kb10"],
-  },
-  {
-    icon: "",
-    label: "CLAS Standards Compliance",
-    tier: "Tier 2",
-    prompt: "Evaluate DSD performance against all 15 CLAS Standards. For each standard: current compliance level, evidence, gaps identified, and remediation steps. Pay special attention to Standards 1-3 (Governance), 4-7 (Communication & Language), and 8-14 (Organizational Supports).",
-    agents: ["hcbs", "policy", "training"],
-    kbDocs: ["kb3", "kb6", "kb12"],
-  },
-  {
-    icon: "",
-    label: "Cross-System Research Query",
-    tier: "Tier 3",
-    prompt: "I need a cross-system research synthesis. Query all 14 agent domains and the full knowledge base to answer: What are the most significant equity gaps across ALL systems (policy, data, training, community, rates, employment, compliance, legislative)? Identify interconnections and recommend a prioritized action plan.",
-    agents: RESEARCH_AGENTS.map(a => a.id),
-    kbDocs: KB_DOCUMENTS.map(d => d.id),
-  },
-  {
-    icon: "",
-    label: "DWRS Rate Equity Analysis",
-    tier: "Tier 2",
-    prompt: "Analyze the Disability Waiver Rate System through an equity lens. Are rates equitable across demographics and geographies? Identify disparities in provider reimbursement, access gaps in rural/tribal communities, and the impact on workforce stability (DSP wages and turnover). Recommend rate adjustments for equity.",
-    agents: ["dwrs", "equity-data", "community"],
-    kbDocs: ["kb5", "kb11", "kb13"],
-  },
-  {
-    icon: "",
-    label: "HCBS Settings Compliance",
-    tier: "Tier 2",
-    prompt: "Provide a comprehensive HCBS Settings Rule compliance assessment. Status against the March 2027 deadline, settings that need remediation, person-centered planning gaps, and community integration benchmarks. Cross-reference with Olmstead Plan requirements and CHOICE Framework outcomes.",
-    agents: ["hcbs", "olmstead", "waiver"],
-    kbDocs: ["kb3", "kb4", "kb8"],
-  },
+/* ------------------------------------------------------------------ */
+/*  KNOWLEDGE BASE                                                     */
+/* ------------------------------------------------------------------ */
+const KB_DOCUMENTS: KBDocument[] = [
+  { id: "eo-14091", title: "Executive Order 14091 \u2014 Advancing Racial Equity", category: "Governing", authorityLevel: "federal", description: "Federal mandate requiring equity assessments across all government programs and services.", tags: ["federal mandate", "racial equity", "DEIA"], source: "whitehouse.gov" },
+  { id: "eo-13985", title: "Executive Order 13985 \u2014 Equity Action Plans", category: "Governing", authorityLevel: "federal", description: "Directs agencies to assess and remove barriers to equitable access in federal programs.", tags: ["equity action plans", "systemic barriers"], source: "whitehouse.gov" },
+  { id: "ada-1990", title: "Americans with Disabilities Act (ADA)", category: "Governing", authorityLevel: "federal", description: "Prohibits discrimination against individuals with disabilities in all areas of public life.", tags: ["disability rights", "accessibility", "civil rights"], source: "ada.gov" },
+  { id: "section-504", title: "Section 504 \u2014 Rehabilitation Act", category: "Governing", authorityLevel: "federal", description: "Prohibits discrimination based on disability in programs receiving federal financial assistance.", tags: ["disability", "rehabilitation", "federal funding"], source: "hhs.gov" },
+  { id: "olmstead", title: "Olmstead v. L.C. Decision", category: "Governing", authorityLevel: "federal", description: "Supreme Court ruling requiring states to provide community-based services for people with disabilities.", tags: ["community integration", "institutional reform"], source: "ada.gov" },
+  { id: "mn-disability-plan", title: "Minnesota Disability Equity Action Plan", category: "Equity Tools", authorityLevel: "state", description: "State-level strategic plan aligning disability services with equity goals and outcomes.", tags: ["strategic plan", "Minnesota", "disability services"], source: "mn.gov/dhs" },
+  { id: "mn-olmstead-plan", title: "Minnesota Olmstead Plan", category: "Governing", authorityLevel: "state", description: "Minnesota implementation plan for community integration of people with disabilities.", tags: ["Olmstead", "community integration", "Minnesota"], source: "mn.gov/olmstead" },
+  { id: "dsd-equity-framework", title: "DSD Equity Framework", category: "Equity Tools", authorityLevel: "division", description: "Division-level framework for embedding equity in disability service design and delivery.", tags: ["framework", "equity lens", "service design"], source: "internal" },
+  { id: "equity-lens-tool", title: "Equity Lens Assessment Tool", category: "Equity Tools", authorityLevel: "division", description: "Structured tool for evaluating policies and programs through an equity perspective.", tags: ["assessment", "equity lens", "evaluation"], source: "internal" },
+  { id: "disparity-data-2024", title: "Disability Services Disparity Data 2024", category: "Data & Research", authorityLevel: "agency", description: "Current data on disparities in access, outcomes, and satisfaction across disability services.", tags: ["data", "disparities", "outcomes"], source: "mn.gov/dhs" },
+  { id: "community-engagement", title: "Community Engagement Standards", category: "Equity Tools", authorityLevel: "division", description: "Standards for meaningful engagement with disability communities in policy development.", tags: ["community engagement", "lived experience", "participation"], source: "internal" },
+  { id: "cultural-responsiveness", title: "Cultural Responsiveness Guidelines", category: "Equity Tools", authorityLevel: "division", description: "Guidelines for culturally responsive service delivery in disability programs.", tags: ["cultural competency", "responsive services"], source: "internal" },
+  { id: "intersectionality-brief", title: "Intersectionality in Disability Services", category: "Data & Research", authorityLevel: "agency", description: "Research brief on how intersecting identities affect disability service access and outcomes.", tags: ["intersectionality", "research", "identity"], source: "mn.gov/dhs" },
+  { id: "waiver-equity-analysis", title: "Waiver Program Equity Analysis", category: "Data & Research", authorityLevel: "agency", description: "Analysis of equity metrics across HCBS waiver programs including access and utilization.", tags: ["HCBS", "waiver", "equity analysis"], source: "mn.gov/dhs" },
+  { id: "plain-language-guide", title: "Plain Language & Accessibility Guide", category: "Equity Tools", authorityLevel: "operational", description: "Guide for creating accessible, plain-language communications for diverse audiences.", tags: ["plain language", "accessibility", "communications"], source: "internal" },
 ];
 
-/* ───────────────────────────────────────────────────────────────
-   COMPONENT
-   ─────────────────────────────────────────────────────────────── */
+const KB_CATEGORIES = ["All", "Governing", "Equity Tools", "Data & Research"];
+
+const AUTHORITY_COLORS: Record<string, string> = {
+  federal: "bg-blue-100 text-blue-800",
+  state: "bg-purple-100 text-purple-800",
+  agency: "bg-green-100 text-green-800",
+  division: "bg-amber-100 text-amber-800",
+  operational: "bg-gray-100 text-gray-800",
+};
+
+/* ------------------------------------------------------------------ */
+/*  RESEARCH AGENTS                                                    */
+/* ------------------------------------------------------------------ */
+const RESEARCH_AGENTS: ResearchAgent[] = [
+  { id: "policy", name: "Policy Analyst", domain: "Federal & state disability policy", icon: "" },
+  { id: "equity", name: "Equity Specialist", domain: "Equity frameworks & assessment", icon: "" },
+  { id: "legal", name: "Legal Analyst", domain: "ADA, Section 504, Olmstead compliance", icon: "" },
+  { id: "data", name: "Data Analyst", domain: "Disparity data & outcome metrics", icon: "" },
+  { id: "community", name: "Community Liaison", domain: "Engagement & lived experience", icon: "" },
+  { id: "cultural", name: "Cultural Specialist", domain: "Cultural responsiveness & intersectionality", icon: "" },
+  { id: "program", name: "Program Evaluator", domain: "HCBS waiver & service delivery", icon: "" },
+  { id: "access", name: "Accessibility Expert", domain: "Physical & digital accessibility", icon: "" },
+  { id: "comms", name: "Communications Analyst", domain: "Plain language & public engagement", icon: "" },
+  { id: "fiscal", name: "Fiscal Analyst", domain: "Budget equity & resource allocation", icon: "" },
+  { id: "workforce", name: "Workforce Analyst", domain: "DSP workforce equity & development", icon: "" },
+  { id: "transition", name: "Transition Specialist", domain: "Youth transition & employment equity", icon: "" },
+  { id: "housing", name: "Housing Analyst", domain: "Accessible housing & community living", icon: "" },
+  { id: "tech", name: "Technology Analyst", domain: "Assistive technology & digital equity", icon: "" },
+];
+
+/* ------------------------------------------------------------------ */
+/*  RESEARCH TEMPLATES                                                 */
+/* ------------------------------------------------------------------ */
+const RESEARCH_TEMPLATES: ResearchTemplate[] = [
+  { icon: "", label: "Equity Impact Assessment", tier: "deep", prompt: "Conduct a comprehensive equity impact assessment for disability services. Analyze current policies through the DSD Equity Framework, identify disparities using 2024 data, evaluate compliance with EO 14091 and EO 13985, and provide actionable recommendations with implementation timelines.", agents: ["policy", "equity", "data", "legal"], kbDocs: ["eo-14091", "eo-13985", "dsd-equity-framework", "equity-lens-tool", "disparity-data-2024"] },
+  { icon: "", label: "ADA/Olmstead Compliance Review", tier: "deep", prompt: "Perform a detailed compliance review against ADA requirements, Section 504 obligations, and the Olmstead decision. Cross-reference Minnesota's Olmstead Plan with current service delivery practices and identify gaps requiring remediation.", agents: ["legal", "policy", "program", "access"], kbDocs: ["ada-1990", "section-504", "olmstead", "mn-olmstead-plan"] },
+  { icon: "", label: "Disparity Analysis", tier: "deep", prompt: "Analyze current disparity data across disability services. Examine access rates, service utilization, outcomes, and satisfaction metrics disaggregated by race, ethnicity, age, geography, and disability type. Identify root causes and recommend targeted interventions.", agents: ["data", "equity", "cultural", "program"], kbDocs: ["disparity-data-2024", "intersectionality-brief", "waiver-equity-analysis", "dsd-equity-framework"] },
+  { icon: "", label: "Community Engagement Plan", tier: "standard", prompt: "Develop a community engagement plan that centers the voices and lived experiences of people with disabilities. Include strategies for reaching underrepresented populations and ensuring meaningful participation in policy development.", agents: ["community", "cultural", "comms"], kbDocs: ["community-engagement", "cultural-responsiveness", "plain-language-guide"] },
+  { icon: "", label: "HCBS Waiver Equity Review", tier: "deep", prompt: "Review Home and Community-Based Services waiver programs through an equity lens. Analyze access patterns, waitlist demographics, service utilization rates, and outcome disparities across waiver types.", agents: ["program", "data", "fiscal", "equity"], kbDocs: ["waiver-equity-analysis", "disparity-data-2024", "dsd-equity-framework", "mn-disability-plan"] },
+  { icon: "", label: "Cultural Responsiveness Audit", tier: "standard", prompt: "Audit current disability service delivery practices for cultural responsiveness. Evaluate provider cultural competency, language access, and accommodation of diverse cultural perspectives on disability.", agents: ["cultural", "community", "program", "access"], kbDocs: ["cultural-responsiveness", "intersectionality-brief", "community-engagement", "plain-language-guide"] },
+  { icon: "", label: "Policy Gap Analysis", tier: "standard", prompt: "Identify gaps between federal equity mandates and current state/division policies. Map areas where Minnesota disability services policies need strengthening to meet equity requirements.", agents: ["policy", "legal", "equity"], kbDocs: ["eo-14091", "eo-13985", "mn-disability-plan", "dsd-equity-framework", "ada-1990"] },
+  { icon: "", label: "Accessibility Compliance Check", tier: "standard", prompt: "Evaluate physical and digital accessibility of disability services programs. Review compliance with ADA Title II requirements and identify barriers to equitable access.", agents: ["access", "legal", "tech", "comms"], kbDocs: ["ada-1990", "section-504", "plain-language-guide"] },
+];
+
+/* ------------------------------------------------------------------ */
+/*  SYSTEM PROMPT                                                      */
+/* ------------------------------------------------------------------ */
+const EQUITY_ASSIST_SYSTEM = `You are Equity Assist, the AI research engine for the Minnesota Department of Human Services, Disability Services Division (DSD) One DSD Equity Program.
+
+YOUR ROLE:
+You are a specialized equity research assistant that helps DSD staff analyze policies, identify disparities, assess compliance, and develop equity-centered recommendations for disability services.
+
+KNOWLEDGE BASE:
+You have access to an internal knowledge base of governing documents, equity tools, and research data including:
+- Federal executive orders on racial equity (EO 14091, EO 13985)
+- ADA, Section 504, and Olmstead decision requirements
+- Minnesota Disability Equity Action Plan and Olmstead Plan
+- DSD Equity Framework and Equity Lens Assessment Tool
+- Disparity data and intersectionality research
+- Community engagement and cultural responsiveness standards
+- HCBS waiver equity analysis
+- Plain language and accessibility guidelines
+
+RESEARCH APPROACH:
+1. Ground all analysis in the governing documents and equity frameworks
+2. Use disparity data to support findings with evidence
+3. Apply intersectional analysis considering how multiple identities affect outcomes
+4. Center the lived experiences of people with disabilities
+5. Provide actionable, specific recommendations with clear implementation steps
+6. Maintain compliance awareness with federal and state requirements
+7. Use plain, accessible language while maintaining analytical rigor
+
+OUTPUT FORMAT:
+- Structure responses with clear headings and sections
+- Lead with key findings and recommendations
+- Support claims with specific references to knowledge base documents
+- Include compliance implications where relevant
+- End with prioritized action items when appropriate
+
+ETHICAL GUIDELINES:
+- Always center equity and the dignity of people with disabilities
+- Acknowledge limitations in data or analysis
+- Flag potential unintended consequences of recommendations
+- Consider intersectional impacts across all recommendations`;
+
+/* ------------------------------------------------------------------ */
+/*  COMPONENT                                                          */
+/* ------------------------------------------------------------------ */
 export default function EquityAssistPage() {
-  const [messages, setMessages] = useState<ConversationMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [streamingContent, setStreamingContent] = useState("");
-  const [sniffResults, setSniffResults] = useState<Record<string, SniffCheckResult>>({});
-  const [activeTab, setActiveTab] = useState("research");
-  const [kbSearch, setKbSearch] = useState("");
-  const [kbCategory, setKbCategory] = useState("All");
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [researchMode, setResearchMode] = useState<"standard" | "deep">("deep");
   const [selectedDocs, setSelectedDocs] = useState<string[]>([]);
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
-  const [researchMode, setResearchMode] = useState<"standard" | "deep">("standard");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [sniffResults, setSniffResults] = useState<Record<string, SniffResult>>({});
+  const [activeTab, setActiveTab] = useState<"templates" | "knowledge" | "agents">("templates");
+  const [kbFilter, setKbFilter] = useState("All");
+  const [showTopPanel, setShowTopPanel] = useState(false);
+
+  const chatEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const location = useLocation();
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, streamingContent]);
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-  const filteredDocs = KB_DOCUMENTS.filter(doc => {
-    const matchesSearch = kbSearch === "" ||
-      doc.title.toLowerCase().includes(kbSearch.toLowerCase()) ||
-      doc.tags.some(t => t.includes(kbSearch.toLowerCase()));
-    const matchesCat = kbCategory === "All" || doc.category === kbCategory;
-    return matchesSearch && matchesCat;
-  });
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
 
-  const toggleDoc = (id: string) => {
-    setSelectedDocs(prev =>
-      prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]
-    );
-  };
+  const buildResearchContext = useCallback(() => {
+    const docs = selectedDocs.length > 0
+      ? KB_DOCUMENTS.filter(d => selectedDocs.includes(d.id))
+      : KB_DOCUMENTS;
+    const agents = selectedAgents.length > 0
+      ? RESEARCH_AGENTS.filter(a => selectedAgents.includes(a.id))
+      : RESEARCH_AGENTS;
+    const mode = researchMode === "deep" ? "DEEP RESEARCH MODE" : "STANDARD MODE";
+    return `\n[${mode}]\n[Knowledge Sources: ${docs.map(d => d.title).join(", ")}]\n[Agent Domains: ${agents.map(a => `${a.name} (${a.domain})`).join(", ")}]\n`;
+  }, [selectedDocs, selectedAgents, researchMode]);
 
-  const toggleAgent = (id: string) => {
-    setSelectedAgents(prev =>
-      prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
-    );
-  };
+  const sendMessage = useCallback(async (text?: string) => {
+    const content = text || input.trim();
+    if (!content || isStreaming) return;
 
-  const buildResearchContext = () => {
-    const docContext = selectedDocs.length > 0
-      ? `\n\nSELECTED KNOWLEDGE BASE DOCUMENTS FOR THIS QUERY:\n${selectedDocs.map(id => {
-          const doc = KB_DOCUMENTS.find(d => d.id === id);
-          return doc ? `- ${doc.title} [${doc.authorityLevel}] — ${doc.description}` : "";
-        }).filter(Boolean).join("\n")}`
-      : "";
-
-    const agentContext = selectedAgents.length > 0
-      ? `\n\nFOCUS AGENT DOMAINS FOR THIS QUERY:\n${selectedAgents.map(id => {
-          const agent = RESEARCH_AGENTS.find(a => a.id === id);
-          return agent ? `- ${agent.name}: ${agent.domain}` : "";
-        }).filter(Boolean).join("\n")}`
-      : "";
-
-    const modeContext = researchMode === "deep"
-      ? "\n\nDEEP RESEARCH MODE ACTIVE: Provide exhaustive analysis. Query all relevant knowledge bases. Cite every source. Include quantitative data where available. Minimum 1000 words for Tier 2+."
-      : "";
-
-    return docContext + agentContext + modeContext;
-  };
-
-  const sendMessage = useCallback(async (content: string) => {
-    if (!content.trim() || isLoading) return;
-
-    const userMsg: ConversationMessage = {
-      id: `user-${Date.now()}`,
+    const userMsg: ChatMessage = {
+      id: `u-${Date.now()}`,
       role: "user",
-      content: content.trim(),
-      timestamp: new Date().toISOString()
+      content,
+      timestamp: Date.now(),
     };
-
     setMessages(prev => [...prev, userMsg]);
-    setInput("");
-    setIsLoading(true);
-    setStreamingContent("");
+    if (!text) setInput("");
+    setIsStreaming(true);
 
-    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      const errorMsg: ConversationMessage = {
-        id: `assistant-${Date.now()}`,
-        role: "assistant",
-        content: "API key not configured. Please add VITE_ANTHROPIC_API_KEY to environment variables to enable Equity Assist research capabilities.",
-        timestamp: new Date().toISOString()
-      };
-      setMessages(prev => [...prev, errorMsg]);
-      setIsLoading(false);
-      return;
-    }
+    const assistantId = `a-${Date.now()}`;
+    const assistantMsg: ChatMessage = {
+      id: assistantId,
+      role: "assistant",
+      content: "",
+      timestamp: Date.now(),
+    };
+    setMessages(prev => [...prev, assistantMsg]);
 
     try {
-      const aiMessages = [...messages, userMsg].map(m => ({
-        role: m.role as "user" | "assistant",
-        content: m.content
-      }));
+      const context = buildResearchContext();
+      const systemPrompt = EQUITY_ASSIST_SYSTEM + context;
+      const history = messages.map(m => ({ role: m.role, content: m.content }));
+      history.push({ role: "user", content });
 
-      let fullContent = "";
-      const assistantMsgId = `assistant-${Date.now()}`;
-      const researchContext = buildResearchContext();
-
+      let fullResponse = "";
       await callAIStream(
-        aiMessages,
-        {
-          agentId: "equity-assist",
-          agentName: "Equity Assist — Research & Consultation",
-          agentPurpose: EQUITY_ASSIST_SYSTEM,
-          systemPromptAddendum: `Current platform page: ${location.pathname}\nThe user is the Equity and Inclusion Operations Consultant. You are their exponential extension — multiply their capacity across every domain.${researchContext}`,
-          maxTokens: researchMode === "deep" ? 8192 : 4096,
-          temperature: 0.2,
+        systemPrompt,
+        history,
+        (chunk: string) => {
+          fullResponse += chunk;
+          setMessages(prev =>
+            prev.map(m => m.id === assistantId ? { ...m, content: fullResponse } : m)
+          );
         },
-        (chunk) => {
-          if (!chunk.done) {
-            fullContent += chunk.delta;
-            setStreamingContent(fullContent);
-          }
-        }
+        { model: "claude-opus-4-5", maxTokens: 16000 }
       );
 
-      setStreamingContent("");
-
-      const assistantMsg: ConversationMessage = {
-        id: assistantMsgId,
-        role: "assistant",
-        content: fullContent,
-        timestamp: new Date().toISOString(),
-        metadata: { model: "claude-opus-4-5" }
-      };
-
-      const sniffResult = runL1Check(fullContent, {
-        agentId: "equity-assist",
-        outputType: "report",
-        audience: "staff",
-        contentType: "text"
-      });
-
-      setSniffResults(prev => ({ ...prev, [assistantMsgId]: sniffResult }));
-      setMessages(prev => [...prev, assistantMsg]);
-    } catch (error) {
-      const errorMsg: ConversationMessage = {
-        id: `error-${Date.now()}`,
-        role: "assistant",
-        content: `Research error: ${error instanceof Error ? error.message : "Unknown error"}. Check API key and try again.`,
-        timestamp: new Date().toISOString()
-      };
-      setMessages(prev => [...prev, errorMsg]);
-      toast.error("Equity Assist research request failed");
+      try {
+        const result = await runL1Check(fullResponse);
+        setSniffResults(prev => ({ ...prev, [assistantId]: result }));
+      } catch {}
+    } catch (err: any) {
+      setMessages(prev =>
+        prev.map(m =>
+          m.id === assistantId
+            ? { ...m, content: `Research error: ${err?.message || "Unable to complete analysis. Please try again."}` }
+            : m
+        )
+      );
     } finally {
-      setIsLoading(false);
+      setIsStreaming(false);
     }
-  }, [messages, isLoading, location.pathname, selectedDocs, selectedAgents, researchMode]);
+  }, [input, isStreaming, messages, buildResearchContext]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      sendMessage(input);
+      sendMessage();
     }
   };
 
-  const runTemplate = (template: ResearchTemplate) => {
-    setSelectedDocs(template.kbDocs);
-    setSelectedAgents(template.agents);
-    setResearchMode("deep");
-    sendMessage(template.prompt);
+  const runTemplate = (t: ResearchTemplate) => {
+    setSelectedDocs(t.kbDocs);
+    setSelectedAgents(t.agents);
+    setResearchMode(t.tier === "deep" ? "deep" : "standard");
+    setShowTopPanel(false);
+    setTimeout(() => sendMessage(t.prompt), 100);
   };
 
   const clearSession = () => {
     setMessages([]);
     setSniffResults({});
-    setStreamingContent("");
+    setInput("");
     setSelectedDocs([]);
     setSelectedAgents([]);
+    toast.success("Session cleared");
   };
 
   const exportResearch = () => {
-    if (messages.length === 0) {
-      toast.error("No research to export");
-      return;
-    }
+    if (messages.length === 0) { toast.error("No research to export"); return; }
     const header = `EQUITY ASSIST RESEARCH EXPORT\nDate: ${new Date().toLocaleDateString()}\nMode: ${researchMode === "deep" ? "Deep Research" : "Standard"}\nKnowledge Sources: ${selectedDocs.length || KB_DOCUMENTS.length} documents\nAgent Domains: ${selectedAgents.length || RESEARCH_AGENTS.length} agents\nSniff Check: L1 Active\n${"=".repeat(80)}\n\n`;
     const body = messages.map(m => {
       const role = m.role === "user" ? "RESEARCH QUERY" : "EQUITY ASSIST RESPONSE";
       const ts = new Date(m.timestamp).toLocaleString();
-      const sniff = m.role === "assistant" && sniffResults[m.id]
-        ? `\n[Sniff Check L1: ${sniffResults[m.id].status.toUpperCase()}]`
-        : "";
+      const sniff = m.role === "assistant" && sniffResults[m.id] ? `\n[Sniff Check L1: ${sniffResults[m.id].status.toUpperCase()}]` : "";
       return `--- ${role} (${ts}) ---\n\n${m.content}${sniff}\n`;
     }).join("\n" + "=".repeat(80) + "\n\n");
-    const footer = `\n${"=".repeat(80)}\nGenerated by Equity Assist — One DSD Equity Program\nMinnesota Department of Human Services, Disability Services Division\n`;
+    const footer = `\n${"=".repeat(80)}\nGenerated by Equity Assist \u2014 One DSD Equity Program\nMinnesota Department of Human Services, Disability Services Division\n`;
     const text = header + body + footer;
     const blob = new Blob([text], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = `equity-assist-research-${new Date().toISOString().slice(0, 10)}.txt`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast.success("Research exported successfully");
+    toast.success("Research exported");
   };
 
-  /* helper — latest assistant response for display */
-  const latestResponse = messages.filter(m => m.role === "assistant").slice(-1)[0];
-  const latestQuery = messages.filter(m => m.role === "user").slice(-1)[0];
+  const toggleDoc = (id: string) => {
+    setSelectedDocs(prev => prev.includes(id) ? prev.filter(d => d !== id) : [...prev, id]);
+  };
 
+  const toggleAgent = (id: string) => {
+    setSelectedAgents(prev => prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]);
+  };
+
+  const formatContent = (text: string) => {
+    let html = text
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/^### (.+)$/gm, '<h4 class="text-sm font-semibold mt-4 mb-1 text-gray-900">$1</h4>')
+      .replace(/^## (.+)$/gm, '<h3 class="text-base font-semibold mt-5 mb-2 text-gray-900">$1</h3>')
+      .replace(/^# (.+)$/gm, '<h2 class="text-lg font-bold mt-6 mb-2 text-gray-900">$1</h2>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/^- (.+)$/gm, '<li class="ml-4 mb-1">$1</li>')
+      .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-4 mb-1"><span class="font-medium">$1.</span> $2</li>')
+      .replace(/\n{2,}/g, '<br/><br/>')
+      .replace(/\n/g, '<br/>');
+    return html;
+  };
+
+  const filteredDocs = kbFilter === "All" ? KB_DOCUMENTS : KB_DOCUMENTS.filter(d => d.category === kbFilter);
+
+  /* ---------------------------------------------------------------- */
+  /*  RENDER                                                           */
+  /* ---------------------------------------------------------------- */
   return (
-    <div className="p-4 md:p-6 max-w-[1600px] mx-auto flex flex-col" style={{ height: "calc(100vh - 64px)" }}>
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-shrink-0">
-        <div>
-          <h1 className="text-2xl font-bold text-[#003865]" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
-            <EditableText field="ea-title" defaultValue="Equity Assist" />
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            <EditableText field="ea-subtitle" defaultValue="AI research & consultation — integrated across all knowledge bases, data systems, and 14 specialized agents" />
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge className={cn(
-            "text-xs px-3 py-1",
-            researchMode === "deep"
-              ? "bg-[#003865] text-white"
-              : "bg-muted text-muted-foreground"
-          )}>
-            {researchMode === "deep" ? "Deep Research" : "Standard"} Mode
-          </Badge>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setResearchMode(researchMode === "deep" ? "standard" : "deep")}
-            className="text-xs h-8"
-          >
-            {researchMode === "deep" ? "Switch to Standard" : "Enable Deep Research"}
-          </Button>
+    <div className="flex flex-col h-full w-full bg-white" style={{ height: "calc(100vh - 56px)" }}>
+
+      {/* TOP TABS BAR */}
+      <div className="flex-none border-b border-gray-200 bg-gray-50">
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="flex items-center justify-between h-12">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => { setShowTopPanel(activeTab === "templates" && showTopPanel ? false : true); setActiveTab("templates"); }}
+                className={cn(
+                  "px-3 py-1.5 text-sm rounded-md transition-colors",
+                  activeTab === "templates" && showTopPanel ? "bg-white text-gray-900 shadow-sm font-medium" : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                )}
+              >
+                Templates
+              </button>
+              <button
+                onClick={() => { setShowTopPanel(activeTab === "knowledge" && showTopPanel ? false : true); setActiveTab("knowledge"); }}
+                className={cn(
+                  "px-3 py-1.5 text-sm rounded-md transition-colors",
+                  activeTab === "knowledge" && showTopPanel ? "bg-white text-gray-900 shadow-sm font-medium" : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                )}
+              >
+                Knowledge Base
+              </button>
+              <button
+                onClick={() => { setShowTopPanel(activeTab === "agents" && showTopPanel ? false : true); setActiveTab("agents"); }}
+                className={cn(
+                  "px-3 py-1.5 text-sm rounded-md transition-colors",
+                  activeTab === "agents" && showTopPanel ? "bg-white text-gray-900 shadow-sm font-medium" : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                )}
+              >
+                Agents
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setResearchMode(researchMode === "deep" ? "standard" : "deep")}
+                className={cn(
+                  "px-2.5 py-1 text-xs rounded-full border transition-colors",
+                  researchMode === "deep" ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-gray-50 border-gray-200 text-gray-600"
+                )}
+              >
+                {researchMode === "deep" ? "Deep Research" : "Standard"}
+              </button>
+              {messages.length > 0 && (
+                <>
+                  <button onClick={exportResearch} className="px-2.5 py-1 text-xs rounded-md border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors">
+                    Export
+                  </button>
+                  <button onClick={clearSession} className="px-2.5 py-1 text-xs rounded-md border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors">
+                    Clear
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      <PageToolbar />
+      {/* COLLAPSIBLE TOP PANEL */}
+      {showTopPanel && (
+        <div className="flex-none border-b border-gray-200 bg-gray-50 overflow-y-auto" style={{ maxHeight: "280px" }}>
+          <div className="max-w-5xl mx-auto px-4 py-3">
 
-      {/* Status bar */}
-      <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 border rounded-lg px-4 py-2 mt-3 flex-shrink-0">
-        <span className="flex h-2 w-2 relative">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#78BE21] opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-[#78BE21]"></span>
-        </span>
-        <span>Equity Assist Active</span>
-        <span className="mx-1">·</span>
-        <span>{KB_DOCUMENTS.length} knowledge base documents</span>
-        <span className="mx-1">·</span>
-        <span>{RESEARCH_AGENTS.length} agent domains</span>
-        <span className="mx-1">·</span>
-        <span>Sniff Check L1 Active</span>
-        {selectedDocs.length > 0 && (
-          <>
-            <span className="mx-1">·</span>
-            <Badge variant="outline" className="text-[10px] h-5">{selectedDocs.length} docs selected</Badge>
-          </>
-        )}
-        {selectedAgents.length > 0 && (
-          <>
-            <span className="mx-1">·</span>
-            <Badge variant="outline" className="text-[10px] h-5">{selectedAgents.length} agents focused</Badge>
-          </>
-        )}
-      </div>
-
-      {/* Main layout: top 60% sidebar + input, bottom 40% research output */}
-      <div className="flex flex-col flex-1 mt-4 min-h-0 gap-4">
-
-        {/* TOP SECTION — sidebar + query input (60%) */}
-        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4 flex-shrink-0" style={{ height: "55%" }}>
-
-          {/* LEFT PANEL — Knowledge & Agents */}
-          <div className="overflow-y-auto border rounded-lg bg-white p-3">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="w-full">
-                <TabsTrigger value="research" className="text-xs flex-1">Templates</TabsTrigger>
-                <TabsTrigger value="knowledge" className="text-xs flex-1">Knowledge Base</TabsTrigger>
-                <TabsTrigger value="agents" className="text-xs flex-1">Agents</TabsTrigger>
-              </TabsList>
-
-              {/* Research Templates */}
-              <TabsContent value="research" className="mt-3 space-y-2">
-                {RESEARCH_TEMPLATES.map((template, i) => (
+            {activeTab === "templates" && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {RESEARCH_TEMPLATES.map((t, i) => (
                   <button
                     key={i}
-                    onClick={() => runTemplate(template)}
-                    disabled={isLoading}
-                    className="w-full text-left p-3 rounded-lg border hover:border-[#003865]/30 hover:bg-[#003865]/5 transition-all group disabled:opacity-50"
+                    onClick={() => runTemplate(t)}
+                    disabled={isStreaming}
+                    className="text-left p-3 rounded-lg border border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50 transition-colors disabled:opacity-50"
                   >
-                    <div className="flex items-start gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold text-foreground">{template.label}</span>
-                          <Badge variant="outline" className="text-[9px] h-4 px-1.5">{template.tier}</Badge>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{template.prompt.substring(0, 100)}...</p>
-                        <div className="flex gap-1 mt-1.5 flex-wrap">
-                          {template.agents.slice(0, 3).map(aId => {
-                            const agent = RESEARCH_AGENTS.find(a => a.id === aId);
-                            return agent ? (
-                              <span key={aId} className="text-[9px] px-1.5 py-0.5 bg-muted rounded-full">{agent.name}</span>
-                            ) : null;
-                          })}
-                          {template.agents.length > 3 && (
-                            <span className="text-[9px] px-1.5 py-0.5 bg-muted rounded-full text-muted-foreground">+{template.agents.length - 3} more</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                    <div className="text-sm font-medium text-gray-900 mb-1">{t.label}</div>
+                    <div className="text-xs text-gray-500">{t.tier === "deep" ? "Deep Research" : "Standard"} -- {t.agents.length} agents</div>
                   </button>
                 ))}
-              </TabsContent>
+              </div>
+            )}
 
-              {/* Knowledge Base */}
-              <TabsContent value="knowledge" className="mt-3 space-y-2">
-                <Input
-                  placeholder="Search knowledge base..."
-                  value={kbSearch}
-                  onChange={e => setKbSearch(e.target.value)}
-                  className="text-xs h-8"
-                />
-                <div className="flex gap-1 flex-wrap">
+            {activeTab === "knowledge" && (
+              <div>
+                <div className="flex gap-1 mb-2">
                   {KB_CATEGORIES.map(cat => (
                     <button
                       key={cat}
-                      onClick={() => setKbCategory(cat)}
+                      onClick={() => setKbFilter(cat)}
                       className={cn(
-                        "text-[10px] px-2 py-1 rounded-full border transition-colors",
-                        kbCategory === cat
-                          ? "bg-[#003865] text-white border-[#003865]"
-                          : "hover:bg-muted"
+                        "px-2.5 py-1 text-xs rounded-full transition-colors",
+                        kbFilter === cat ? "bg-blue-100 text-blue-700" : "bg-white text-gray-600 hover:bg-gray-100"
                       )}
                     >
                       {cat}
                     </button>
                   ))}
-                  {selectedDocs.length > 0 && (
-                    <button
-                      onClick={() => setSelectedDocs([])}
-                      className="text-[10px] px-2 py-1 rounded-full border border-red-200 text-red-600 hover:bg-red-50"
-                    >
-                      Clear ({selectedDocs.length})
-                    </button>
-                  )}
                 </div>
-                <div className="space-y-1.5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
                   {filteredDocs.map(doc => (
                     <button
                       key={doc.id}
                       onClick={() => toggleDoc(doc.id)}
                       className={cn(
-                        "w-full text-left p-2.5 rounded-lg border transition-all text-xs",
-                        selectedDocs.includes(doc.id)
-                          ? "border-[#003865] bg-[#003865]/5 ring-1 ring-[#003865]/20"
-                          : "hover:bg-muted/50"
+                        "flex items-start gap-2 text-left p-2 rounded-lg border transition-colors",
+                        selectedDocs.includes(doc.id) ? "border-blue-300 bg-blue-50" : "border-gray-200 bg-white hover:border-gray-300"
                       )}
                     >
-                      <div className="flex items-center gap-2">
-                        <div className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", selectedDocs.includes(doc.id) ? "bg-[#78BE21]" : "bg-gray-300")} />
-                        <span className="font-medium text-[11px] truncate">{doc.title}</span>
-                        <Badge className={cn("text-[8px] h-3.5 ml-auto flex-shrink-0", AUTHORITY_COLORS[doc.authorityLevel])}>
-                          {doc.authorityLevel}
-                        </Badge>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-gray-900 truncate">{doc.title}</div>
+                        <div className="text-xs text-gray-500 truncate">{doc.description}</div>
                       </div>
-                      <p className="text-[10px] text-muted-foreground mt-0.5 ml-3.5 line-clamp-1">{doc.description}</p>
+                      <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full flex-none", AUTHORITY_COLORS[doc.authorityLevel] || "bg-gray-100 text-gray-600")}>
+                        {doc.authorityLevel}
+                      </span>
                     </button>
                   ))}
                 </div>
-              </TabsContent>
+                {selectedDocs.length > 0 && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-xs text-gray-500">{selectedDocs.length} selected</span>
+                    <button onClick={() => setSelectedDocs([])} className="text-xs text-blue-600 hover:text-blue-800">Clear selection</button>
+                  </div>
+                )}
+              </div>
+            )}
 
-              {/* Agents */}
-              <TabsContent value="agents" className="mt-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] text-muted-foreground">Select agents to focus research</span>
-                  {selectedAgents.length > 0 && (
-                    <button
-                      onClick={() => setSelectedAgents([])}
-                      className="text-[10px] text-red-600 hover:underline"
-                    >
-                      Clear ({selectedAgents.length})
-                    </button>
-                  )}
-                </div>
-                <div className="grid grid-cols-1 gap-1.5">
+            {activeTab === "agents" && (
+              <div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5">
                   {RESEARCH_AGENTS.map(agent => (
                     <button
                       key={agent.id}
                       onClick={() => toggleAgent(agent.id)}
                       className={cn(
-                        "w-full text-left p-2 rounded-lg border transition-all",
-                        selectedAgents.includes(agent.id)
-                          ? "border-[#003865] bg-[#003865]/5 ring-1 ring-[#003865]/20"
-                          : "hover:bg-muted/50"
+                        "text-left p-2 rounded-lg border transition-colors",
+                        selectedAgents.includes(agent.id) ? "border-blue-300 bg-blue-50" : "border-gray-200 bg-white hover:border-gray-300"
                       )}
                     >
-                      <div className="flex items-center gap-2.5">
-                        <div className={cn(
-                          "w-6 h-6 rounded flex-shrink-0 flex items-center justify-center text-[10px] font-bold",
-                          selectedAgents.includes(agent.id)
-                            ? "bg-[#003865] text-white"
-                            : "bg-muted text-muted-foreground"
-                        )}>
-                          {agent.name.charAt(0)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-xs font-medium block">{agent.name}</span>
-                          <span className="text-[10px] text-muted-foreground">{agent.domain}</span>
-                        </div>
-                        <div className={cn("w-2 h-2 rounded-full flex-shrink-0", selectedAgents.includes(agent.id) ? "bg-[#78BE21]" : "bg-gray-200")} />
-                      </div>
+                      <div className="text-sm font-medium text-gray-900">{agent.name}</div>
+                      <div className="text-xs text-gray-500">{agent.domain}</div>
                     </button>
                   ))}
                 </div>
-                <div className="pt-2 border-t">
-                  <Link to="/agents" className="text-[11px] text-[#003865] hover:underline">
-                    View all agents in detail
-                  </Link>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          {/* RIGHT — Query Input Panel */}
-          <div className="flex flex-col border rounded-lg bg-white overflow-hidden">
-            {/* Query header */}
-            <div className="flex items-center justify-between px-4 py-2.5 bg-[#003865] text-white flex-shrink-0">
-              <div>
-                <h3 className="font-semibold text-sm">Research Query</h3>
-                <p className="text-[10px] text-white/60">{researchMode === "deep" ? "Deep Research" : "Standard"} · CLAS · HCBS · DHS Toolkit · Sniff Check L1</p>
-              </div>
-              <div className="flex items-center gap-2">
-                {messages.length > 0 && (
-                  <>
-                    <button onClick={exportResearch} className="px-2 py-1 rounded text-[10px] bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors" title="Export research">
-                      Export
-                    </button>
-                    <button onClick={clearSession} className="px-2 py-1 rounded text-[10px] bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors" title="New session">
-                      Clear
-                    </button>
-                  </>
+                {selectedAgents.length > 0 && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-xs text-gray-500">{selectedAgents.length} selected</span>
+                    <button onClick={() => setSelectedAgents([])} className="text-xs text-blue-600 hover:text-blue-800">Clear selection</button>
+                  </div>
                 )}
-                <span className="text-[10px] text-white/50">{messages.length > 0 ? `${messages.length} entries` : ""}</span>
-              </div>
-            </div>
-
-            {/* Query input area */}
-            <div className="p-4 flex-1 flex flex-col justify-between">
-              <div className="flex-1">
-                <Textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={researchMode === "deep"
-                    ? "Enter your deep research query — cross-system synthesis, equity analysis, policy review, disparity assessment..."
-                    : "Enter your research query — policy lookups, data points, framework references, compliance checks..."}
-                  className="w-full h-full min-h-[80px] resize-none text-sm border-0 focus-visible:ring-0 p-0"
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                <p className="text-[10px] text-muted-foreground">
-                  DHS Equity Toolkit · CLAS Standards · HCBS Guidance · 13-Point Equity Rubric · Sniff Check L1
-                </p>
-                <Button
-                  onClick={() => sendMessage(input)}
-                  disabled={!input.trim() || isLoading}
-                  className="h-8 px-6 bg-[#003865] hover:bg-[#002a4a] text-white text-xs"
-                >
-                  {isLoading ? "Researching..." : "Research"}
-                </Button>
-              </div>
-            </div>
-
-            {/* Current query display (if active) */}
-            {latestQuery && (
-              <div className="border-t px-4 py-2 bg-muted/30 flex-shrink-0">
-                <p className="text-[10px] text-muted-foreground font-medium">Latest Query:</p>
-                <p className="text-[11px] text-foreground line-clamp-2 mt-0.5">{latestQuery.content}</p>
               </div>
             )}
           </div>
         </div>
+      )}
 
-        {/* BOTTOM SECTION — Research Output Panel (landscape, 40% of page) */}
-        <div className="flex-1 min-h-0 border rounded-lg bg-white overflow-hidden flex flex-col">
-          {/* Output header bar */}
-          <div className="flex items-center justify-between px-4 py-2 bg-muted/50 border-b flex-shrink-0">
-            <div className="flex items-center gap-3">
-              <h3 className="text-xs font-semibold text-[#003865]">Research Output</h3>
-              {latestResponse && sniffResults[latestResponse.id] && (
-                <Badge
-                  className={cn(
-                    "text-[9px]",
-                    sniffResults[latestResponse.id].status === "pass" ? "bg-green-100 text-green-700" :
-                    sniffResults[latestResponse.id].status === "warn" ? "bg-amber-100 text-amber-700" :
-                    "bg-red-100 text-red-700"
-                  )}
-                >
-                  Sniff Check: {sniffResults[latestResponse.id].status}
-                </Badge>
-              )}
-              {isLoading && (
-                <span className="text-[10px] text-muted-foreground flex items-center gap-1.5">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#78BE21] animate-pulse" />
-                  Researching across {selectedAgents.length || 14} agent domains and {selectedDocs.length || KB_DOCUMENTS.length} sources...
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {messages.length > 0 && (
-                <button onClick={exportResearch} className="text-[10px] px-2 py-1 rounded border hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
-                  Export Research
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Output content — full width landscape */}
-          <div className="flex-1 overflow-y-auto p-5">
-            {messages.length === 0 && !isLoading ? (
-              <div className="h-full flex items-center justify-center">
-                <div className="text-center max-w-lg">
-                  <h4 className="font-semibold text-sm text-[#003865]">Equity Assist Research Interface</h4>
-                  <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                    Your AI research partner integrated across the full knowledge base, equity metrics, community profiles, and all 14 specialized agents. Select research templates or enter a query above, then research output will appear here.
-                  </p>
-                  <div className="mt-4 grid grid-cols-3 gap-4 text-left">
-                    <div className="p-3 rounded-lg bg-muted/50 border">
-                      <p className="text-[11px] font-medium">1. Select Sources</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">Choose knowledge base docs and agent domains in the left panel</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-muted/50 border">
-                      <p className="text-[11px] font-medium">2. Choose Depth</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">Standard for quick lookups, Deep Research for comprehensive analysis</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-muted/50 border">
-                      <p className="text-[11px] font-medium">3. Research</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">Use templates or type your own research question above</p>
-                    </div>
-                  </div>
-                </div>
+      {/* CHAT AREA */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-3xl mx-auto px-4 py-6">
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center pt-16">
+              <h1 className="text-2xl font-semibold text-gray-900 mb-2">Equity Assist</h1>
+              <p className="text-gray-500 mb-8 max-w-md">
+                AI-powered equity research for the Minnesota DHS Disability Services Division. Select a template above or type your research query below.
+              </p>
+              <div className="grid grid-cols-2 gap-3 max-w-lg w-full">
+                {RESEARCH_TEMPLATES.slice(0, 4).map((t, i) => (
+                  <button
+                    key={i}
+                    onClick={() => runTemplate(t)}
+                    className="text-left p-4 rounded-xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+                  >
+                    <div className="text-sm font-medium text-gray-900 mb-1">{t.label}</div>
+                    <div className="text-xs text-gray-500 line-clamp-2">{t.prompt.slice(0, 80)}...</div>
+                  </button>
+                ))}
               </div>
-            ) : (
-              <div className="space-y-6">
-                {messages.map(message => (
-                  <div key={message.id}>
-                    {message.role === "user" ? (
-                      <div className="mb-3">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[10px] font-semibold text-[#003865] uppercase tracking-wide">Research Query</span>
-                          <span className="text-[9px] text-muted-foreground">{new Date(message.timestamp).toLocaleTimeString()}</span>
-                        </div>
-                        <p className="text-xs text-foreground/80 bg-[#003865]/5 rounded-lg px-3 py-2 border border-[#003865]/10">{message.content}</p>
+            </div>
+          ) : (
+            messages.map(msg => (
+              <div key={msg.id} className={cn("mb-6", msg.role === "user" ? "flex justify-end" : "")}>
+                {msg.role === "user" ? (
+                  <div className="max-w-xl bg-blue-600 text-white rounded-2xl rounded-br-md px-4 py-3">
+                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                  </div>
+                ) : (
+                  <div className="max-w-none">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-full bg-gray-800 flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">E</span>
                       </div>
-                    ) : (
-                      <div className="mb-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-[10px] font-semibold text-[#78BE21] uppercase tracking-wide">Equity Assist Response</span>
-                          <span className="text-[9px] text-muted-foreground">{new Date(message.timestamp).toLocaleTimeString()}</span>
-                          {sniffResults[message.id] && (
-                            <Badge
-                              className={cn(
-                                "text-[8px]",
-                                sniffResults[message.id].status === "pass" ? "bg-green-100 text-green-700" :
-                                sniffResults[message.id].status === "warn" ? "bg-amber-100 text-amber-700" :
-                                "bg-red-100 text-red-700"
-                              )}
-                            >
-                              Sniff Check: {sniffResults[message.id].status}
-                            </Badge>
-                          )}
+                      <span className="text-sm font-medium text-gray-700">Equity Assist</span>
+                      {sniffResults[msg.id] && (
+                        <span className={cn(
+                          "text-[10px] px-1.5 py-0.5 rounded-full",
+                          sniffResults[msg.id].status === "pass" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                        )}>
+                          L1: {sniffResults[msg.id].status}
+                        </span>
+                      )}
+                    </div>
+                    <div
+                      className="prose prose-sm max-w-none text-gray-800 leading-relaxed pl-8"
+                      dangerouslySetInnerHTML={{ __html: formatContent(msg.content) }}
+                    />
+                    {isStreaming && msg.id === messages[messages.length - 1]?.id && msg.content === "" && (
+                      <div className="pl-8 mt-2">
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
                         </div>
-                        <div className="text-[13px] leading-relaxed text-foreground whitespace-pre-wrap">{message.content}</div>
                       </div>
                     )}
-                    <hr className="border-border/40" />
-                  </div>
-                ))}
-
-                {isLoading && streamingContent && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-[10px] font-semibold text-[#78BE21] uppercase tracking-wide">Equity Assist Response</span>
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#78BE21] animate-pulse" />
-                    </div>
-                    <div className="text-[13px] leading-relaxed text-foreground whitespace-pre-wrap">
-                      {streamingContent}
-                      <span className="inline-block w-1 h-4 bg-[#003865] ml-0.5 animate-pulse rounded-sm" />
-                    </div>
                   </div>
                 )}
-
-                {isLoading && !streamingContent && (
-                  <div className="flex items-center gap-2 py-4">
-                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#78BE21] animate-pulse" />
-                    <span className="text-xs text-muted-foreground">
-                      Equity Assist is researching across {selectedAgents.length || 14} agent domains and {selectedDocs.length || KB_DOCUMENTS.length} knowledge base sources...
-                    </span>
-                  </div>
-                )}
-
-                <div ref={messagesEndRef} />
               </div>
-            )}
+            ))
+          )}
+          <div ref={chatEndRef} />
+        </div>
+      </div>
+
+      {/* INPUT BAR */}
+      <div className="flex-none border-t border-gray-200 bg-white">
+        <div className="max-w-3xl mx-auto px-4 py-3">
+          {(selectedDocs.length > 0 || selectedAgents.length > 0) && (
+            <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
+              {selectedDocs.length > 0 && <span>{selectedDocs.length} knowledge sources</span>}
+              {selectedDocs.length > 0 && selectedAgents.length > 0 && <span>--</span>}
+              {selectedAgents.length > 0 && <span>{selectedAgents.length} agents</span>}
+            </div>
+          )}
+          <div className="relative flex items-end gap-2">
+            <div className="flex-1 relative">
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask an equity research question..."
+                disabled={isStreaming}
+                rows={1}
+                className="w-full resize-none rounded-xl border border-gray-300 bg-white px-4 py-3 pr-12 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-50"
+                style={{ minHeight: "48px", maxHeight: "160px" }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = "48px";
+                  target.style.height = Math.min(target.scrollHeight, 160) + "px";
+                }}
+              />
+            </div>
+            <Button
+              onClick={() => sendMessage()}
+              disabled={!input.trim() || isStreaming}
+              className="h-12 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40"
+            >
+              {isStreaming ? (
+                <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19V5m0 0l-7 7m7-7l7 7" />
+                </svg>
+              )}
+            </Button>
+          </div>
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-[11px] text-gray-400">
+              Equity Assist -- One DSD Equity Program -- Minnesota DHS Disability Services Division
+            </p>
+            <p className="text-[11px] text-gray-400">
+              Sniff Check L1 Active
+            </p>
           </div>
         </div>
       </div>
