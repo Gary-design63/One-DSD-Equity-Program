@@ -14,9 +14,9 @@ import { callAIStream } from "@/core/aiProvider";
 import { runL1Check } from "@/core/SniffCheckEngine";
 import type { ConversationMessage, SniffCheckResult } from "@/types";
 
-/* âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-   KNOWLEDGE BASE â mirrors KnowledgeBasePage documents
-   âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+/* ───────────────────────────────────────────────────────────────
+   KNOWLEDGE BASE — mirrors KnowledgeBasePage documents
+   ─────────────────────────────────────────────────────────────── */
 interface KBDocument {
   id: string;
   title: string;
@@ -28,16 +28,16 @@ interface KBDocument {
 }
 
 const KB_DOCUMENTS: KBDocument[] = [
-  { id: "kb1", title: "Americans with Disabilities Act (ADA)", category: "Governing", authorityLevel: "federal", description: "Federal civil rights law â Title II applies to all DHS programs.", tags: ["ada", "civil-rights", "title-ii"], source: "U.S. DOJ" },
-  { id: "kb2", title: "Section 504 â Rehabilitation Act", category: "Governing", authorityLevel: "federal", description: "Prohibits disability discrimination in federally-funded programs.", tags: ["section-504", "rehabilitation-act"], source: "U.S. HHS" },
+  { id: "kb1", title: "Americans with Disabilities Act (ADA)", category: "Governing", authorityLevel: "federal", description: "Federal civil rights law — Title II applies to all DHS programs.", tags: ["ada", "civil-rights", "title-ii"], source: "U.S. DOJ" },
+  { id: "kb2", title: "Section 504 — Rehabilitation Act", category: "Governing", authorityLevel: "federal", description: "Prohibits disability discrimination in federally-funded programs.", tags: ["section-504", "rehabilitation-act"], source: "U.S. HHS" },
   { id: "kb3", title: "HCBS Settings Final Rule", category: "Governing", authorityLevel: "federal", description: "CMS rule for person-centered, community-integrated settings. Compliance deadline March 2027.", tags: ["hcbs", "settings-rule", "cms"], source: "CMS" },
   { id: "kb4", title: "Minnesota Olmstead Plan", category: "Governing", authorityLevel: "state", description: "State plan for community integration of people with disabilities.", tags: ["olmstead", "integration"], source: "Olmstead Implementation Office" },
-  { id: "kb5", title: "MN Statutes Ch. 256B â Medical Assistance", category: "Governing", authorityLevel: "state", description: "Statutory authority for CADI, DD, BI, and CAC waivers.", tags: ["statute", "waivers"], source: "MN Legislature" },
-  { id: "kb6", title: "DHS Equity Policy â EO 19-01", category: "Equity Tools", authorityLevel: "agency", description: "Agency-wide DEI policy implementing Governor's Executive Order.", tags: ["equity-policy", "dei"], source: "DHS Office of Equity" },
+  { id: "kb5", title: "MN Statutes Ch. 256B — Medical Assistance", category: "Governing", authorityLevel: "state", description: "Statutory authority for CADI, DD, BI, and CAC waivers.", tags: ["statute", "waivers"], source: "MN Legislature" },
+  { id: "kb6", title: "DHS Equity Policy — EO 19-01", category: "Equity Tools", authorityLevel: "agency", description: "Agency-wide DEI policy implementing Governor's Executive Order.", tags: ["equity-policy", "dei"], source: "DHS Office of Equity" },
   { id: "kb7", title: "Racial Equity Impact Assessment Tool", category: "Equity Tools", authorityLevel: "agency", description: "Standardized tool for assessing racial equity impacts of policies and programs.", tags: ["reia", "racial-equity"], source: "DHS Office of Equity" },
   { id: "kb8", title: "CHOICE Framework Reference", category: "Equity Tools", authorityLevel: "division", description: "Six-domain equity framework: Community, Home, Occupation, Independence, Connections, Equity.", tags: ["choice", "framework"], source: "DSD Equity Operations" },
-  { id: "kb9", title: "Sniff Check Protocol â L1/L2/L3", category: "Equity Tools", authorityLevel: "division", description: "Three-tier QA protocol for equity, accuracy, and cultural responsiveness.", tags: ["sniff-check", "qa"], source: "DSD Equity Operations" },
-  { id: "kb10", title: "Logic Model â Equity Operations", category: "Data & Research", authorityLevel: "division", description: "Inputs â Activities â Outputs â Outcomes â Impact mapping.", tags: ["logic-model", "outcomes"], source: "DSD Equity Operations" },
+  { id: "kb9", title: "Sniff Check Protocol — L1/L2/L3", category: "Equity Tools", authorityLevel: "division", description: "Three-tier QA protocol for equity, accuracy, and cultural responsiveness.", tags: ["sniff-check", "qa"], source: "DSD Equity Operations" },
+  { id: "kb10", title: "Logic Model — Equity Operations", category: "Data & Research", authorityLevel: "division", description: "Inputs → Activities → Outputs → Outcomes → Impact mapping.", tags: ["logic-model", "outcomes"], source: "DSD Equity Operations" },
   { id: "kb11", title: "DWRS Rate Methodology", category: "Data & Research", authorityLevel: "state", description: "Disability Waiver Rate System methodology and annual adjustments.", tags: ["dwrs", "rates"], source: "DHS Rate Setting" },
   { id: "kb12", title: "Title VI Language Access Plan", category: "Data & Research", authorityLevel: "agency", description: "Plan for meaningful access for people with limited English proficiency.", tags: ["title-vi", "language-access"], source: "DHS Civil Rights" },
   { id: "kb13", title: "DSP Workforce Data Report 2024", category: "Data & Research", authorityLevel: "division", description: "Annual workforce demographics, wages, turnover, and equity metrics.", tags: ["dsp", "workforce"], source: "DSD Research" },
@@ -55,9 +55,9 @@ const AUTHORITY_COLORS: Record<string, string> = {
   operational: "bg-gray-100 text-gray-700",
 };
 
-/* âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-   AGENTS â available for cross-agent research
-   âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+/* ───────────────────────────────────────────────────────────────
+   AGENTS — available for cross-agent research
+   ─────────────────────────────────────────────────────────────── */
 interface ResearchAgent {
   id: string;
   name: string;
@@ -66,29 +66,29 @@ interface ResearchAgent {
 }
 
 const RESEARCH_AGENTS: ResearchAgent[] = [
-  { id: "policy", name: "Policy Drafting", domain: "Policy & compliance", icon: "ð" },
-  { id: "equity-data", name: "Equity Data", domain: "Disparities & metrics", icon: "ð" },
-  { id: "training", name: "Training Design", domain: "Staff development", icon: "ð" },
-  { id: "community", name: "Community Outreach", domain: "Engagement & partnerships", icon: "ð¤" },
-  { id: "dwrs", name: "DWRS Rate Analysis", domain: "Waiver rates & funding", icon: "ð°" },
-  { id: "olmstead", name: "Olmstead Monitoring", domain: "Integration compliance", icon: "ð " },
-  { id: "employment", name: "Employment First", domain: "Competitive integrated employment", icon: "ð¼" },
-  { id: "waiver", name: "Waiver Navigator", domain: "CADI/DD/BI/EW navigation", icon: "ð§­" },
-  { id: "hcbs", name: "HCBS Compliance", domain: "Settings rule & CMS", icon: "â" },
-  { id: "stakeholder", name: "Stakeholder Engagement", domain: "Advisory & input", icon: "ð¥" },
-  { id: "legislative", name: "Legislative Affairs", domain: "Bills & fiscal analysis", icon: "âï¸" },
-  { id: "hub", name: "Disability Hub MN", domain: "Service navigation", icon: "ð" },
-  { id: "comms", name: "Communications", domain: "Plain language & messaging", icon: "ð£" },
-  { id: "meta-audit", name: "Meta-Audit & QA", domain: "Cross-system quality", icon: "ð" },
+  { id: "policy", name: "Policy Drafting", domain: "Policy & compliance", icon: "📜" },
+  { id: "equity-data", name: "Equity Data", domain: "Disparities & metrics", icon: "📊" },
+  { id: "training", name: "Training Design", domain: "Staff development", icon: "🎓" },
+  { id: "community", name: "Community Outreach", domain: "Engagement & partnerships", icon: "🤝" },
+  { id: "dwrs", name: "DWRS Rate Analysis", domain: "Waiver rates & funding", icon: "💰" },
+  { id: "olmstead", name: "Olmstead Monitoring", domain: "Integration compliance", icon: "🏠" },
+  { id: "employment", name: "Employment First", domain: "Competitive integrated employment", icon: "💼" },
+  { id: "waiver", name: "Waiver Navigator", domain: "CADI/DD/BI/EW navigation", icon: "🧭" },
+  { id: "hcbs", name: "HCBS Compliance", domain: "Settings rule & CMS", icon: "✅" },
+  { id: "stakeholder", name: "Stakeholder Engagement", domain: "Advisory & input", icon: "👥" },
+  { id: "legislative", name: "Legislative Affairs", domain: "Bills & fiscal analysis", icon: "⚖️" },
+  { id: "hub", name: "Disability Hub MN", domain: "Service navigation", icon: "🌐" },
+  { id: "comms", name: "Communications", domain: "Plain language & messaging", icon: "📣" },
+  { id: "meta-audit", name: "Meta-Audit & QA", domain: "Cross-system quality", icon: "🔍" },
 ];
 
-/* âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ───────────────────────────────────────────────────────────────
    DEEP RESEARCH SYSTEM PROMPT
-   âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
-const EQUITY_ASSIST_SYSTEM = `You are EQUITY ASSIST â the primary AI research and consultation interface for the One DSD Equity Program. You are an exponential extension of the Equity and Inclusion Operations Consultant, designed to multiply their capacity across every domain.
+   ─────────────────────────────────────────────────────────────── */
+const EQUITY_ASSIST_SYSTEM = `You are EQUITY ASSIST — the primary AI research and consultation interface for the One DSD Equity Program. You are an exponential extension of the Equity and Inclusion Operations Consultant, designed to multiply their capacity across every domain.
 
 ARCHITECTURE:
-You have access to the platform's full internal knowledge base and can synthesize information across all 14 specialized agents. You perform DEEP RESEARCH â not surface-level answers.
+You have access to the platform's full internal knowledge base and can synthesize information across all 14 specialized agents. You perform DEEP RESEARCH — not surface-level answers.
 
 INTERNAL KNOWLEDGE BASE (query these):
 - Governing Documents: ADA, Section 504, HCBS Settings Final Rule, Olmstead Plan, MN Statutes Ch. 256B
@@ -106,13 +106,13 @@ When a question spans multiple domains, synthesize across these agent specializa
 - Quality & Oversight (meta-audit, Olmstead monitoring, Sniff Check)
 
 CONSULTATION TIERS:
-- Tier 1 (Quick Guidance): Policy lookups, data points, framework references â respond with specific citations
-- Tier 2 (Analysis): Equity impact assessment, community context synthesis, disparity analysis â provide structured analysis with data
-- Tier 3 (Strategic): Multi-system recommendations, implementation planning, stakeholder mapping â comprehensive consultation with action items
+- Tier 1 (Quick Guidance): Policy lookups, data points, framework references — respond with specific citations
+- Tier 2 (Analysis): Equity impact assessment, community context synthesis, disparity analysis — provide structured analysis with data
+- Tier 3 (Strategic): Multi-system recommendations, implementation planning, stakeholder mapping — comprehensive consultation with action items
 
 RESEARCH PROTOCOL:
 1. IDENTIFY which knowledge bases and agent domains are relevant
-2. SYNTHESIZE across sources â never answer from a single silo
+2. SYNTHESIZE across sources — never answer from a single silo
 3. CITE specific documents, data points, and frameworks by name
 4. APPLY the equity lens: Who benefits? Who is burdened? Who was consulted? Who decides?
 5. RECOMMEND concrete next steps grounded in the DEIA 3-year plan phases
@@ -128,9 +128,9 @@ RESPONSE FORMAT:
 
 You are backed by: DHS Equity Analysis Toolkit, CLAS Standards (15 standards), HCBS Settings Rule, Minnesota community cultural profiles, CHOICE Framework (6 domains), 6-Goal Operational Plan, 8-System DEIA Ecosystem, Sniff Check methodology (3 tiers), and the complete Meta-Skills Framework (39 skills across 6 domains).`;
 
-/* âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ───────────────────────────────────────────────────────────────
    RESEARCH TEMPLATES
-   âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+   ─────────────────────────────────────────────────────────────── */
 interface ResearchTemplate {
   icon: string;
   label: string;
@@ -142,7 +142,7 @@ interface ResearchTemplate {
 
 const RESEARCH_TEMPLATES: ResearchTemplate[] = [
   {
-    icon: "ð",
+    icon: "📊",
     label: "Equity Disparity Analysis",
     tier: "Tier 2",
     prompt: "Conduct a comprehensive equity disparity analysis across all service dimensions. Pull data from equity metrics, community profiles, and workforce reports. Identify the top 5 most critical gaps, analyze root causes using the 13-Point Equity Rubric, and recommend priority interventions aligned to the DEIA 3-year plan.",
@@ -150,7 +150,7 @@ const RESEARCH_TEMPLATES: ResearchTemplate[] = [
     kbDocs: ["kb7", "kb8", "kb13"],
   },
   {
-    icon: "ð",
+    icon: "📋",
     label: "Policy Equity Review",
     tier: "Tier 2",
     prompt: "Perform a policy equity review using the Sniff Check methodology and Racial Equity Impact Assessment Tool. Which current policies need review? Apply the equity lens (who benefits, who is burdened, who was consulted, who decides) and cross-reference with CLAS Standards and HCBS requirements.",
@@ -158,7 +158,7 @@ const RESEARCH_TEMPLATES: ResearchTemplate[] = [
     kbDocs: ["kb6", "kb7", "kb9"],
   },
   {
-    icon: "ð¥",
+    icon: "👥",
     label: "Community Context Synthesis",
     tier: "Tier 2",
     prompt: "Synthesize the full community context for current DSD programs. Compile community profiles, cultural contexts, service gaps, language needs, and partnership status. Focus on underserved populations and communities with the widest disparity gaps. Include recommendations for targeted outreach.",
@@ -166,7 +166,7 @@ const RESEARCH_TEMPLATES: ResearchTemplate[] = [
     kbDocs: ["kb12", "kb14", "kb15"],
   },
   {
-    icon: "ð¯",
+    icon: "🎯",
     label: "DEIA Goal Progress Assessment",
     tier: "Tier 3",
     prompt: "Assess progress on all equity goals across the 6-Goal Operational Plan and DEIA 3-year implementation plan. For each goal: current status, barriers identified, data trends, and recommended accelerators. Include cross-system dependencies and stakeholder mapping.",
@@ -174,7 +174,7 @@ const RESEARCH_TEMPLATES: ResearchTemplate[] = [
     kbDocs: ["kb4", "kb8", "kb10"],
   },
   {
-    icon: "ð",
+    icon: "📖",
     label: "CLAS Standards Compliance",
     tier: "Tier 2",
     prompt: "Evaluate DSD performance against all 15 CLAS Standards. For each standard: current compliance level, evidence, gaps identified, and remediation steps. Pay special attention to Standards 1-3 (Governance), 4-7 (Communication & Language), and 8-14 (Organizational Supports).",
@@ -182,7 +182,7 @@ const RESEARCH_TEMPLATES: ResearchTemplate[] = [
     kbDocs: ["kb3", "kb6", "kb12"],
   },
   {
-    icon: "ð",
+    icon: "🔍",
     label: "Cross-System Research Query",
     tier: "Tier 3",
     prompt: "I need a cross-system research synthesis. Query all 14 agent domains and the full knowledge base to answer: What are the most significant equity gaps across ALL systems (policy, data, training, community, rates, employment, compliance, legislative)? Identify interconnections and recommend a prioritized action plan.",
@@ -190,7 +190,7 @@ const RESEARCH_TEMPLATES: ResearchTemplate[] = [
     kbDocs: KB_DOCUMENTS.map(d => d.id),
   },
   {
-    icon: "ð°",
+    icon: "💰",
     label: "DWRS Rate Equity Analysis",
     tier: "Tier 2",
     prompt: "Analyze the Disability Waiver Rate System through an equity lens. Are rates equitable across demographics and geographies? Identify disparities in provider reimbursement, access gaps in rural/tribal communities, and the impact on workforce stability (DSP wages and turnover). Recommend rate adjustments for equity.",
@@ -198,7 +198,7 @@ const RESEARCH_TEMPLATES: ResearchTemplate[] = [
     kbDocs: ["kb5", "kb11", "kb13"],
   },
   {
-    icon: "ð ",
+    icon: "🏠",
     label: "HCBS Settings Compliance",
     tier: "Tier 2",
     prompt: "Provide a comprehensive HCBS Settings Rule compliance assessment. Status against the March 2027 deadline, settings that need remediation, person-centered planning gaps, and community integration benchmarks. Cross-reference with Olmstead Plan requirements and CHOICE Framework outcomes.",
@@ -207,9 +207,9 @@ const RESEARCH_TEMPLATES: ResearchTemplate[] = [
   },
 ];
 
-/* âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+/* ───────────────────────────────────────────────────────────────
    COMPONENT
-   âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+   ─────────────────────────────────────────────────────────────── */
 export default function EquityAssistPage() {
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [input, setInput] = useState("");
@@ -254,7 +254,7 @@ export default function EquityAssistPage() {
     const docContext = selectedDocs.length > 0
       ? `\n\nSELECTED KNOWLEDGE BASE DOCUMENTS FOR THIS QUERY:\n${selectedDocs.map(id => {
           const doc = KB_DOCUMENTS.find(d => d.id === id);
-          return doc ? `- ${doc.title} [${doc.authorityLevel}] â ${doc.description}` : "";
+          return doc ? `- ${doc.title} [${doc.authorityLevel}] — ${doc.description}` : "";
         }).filter(Boolean).join("\n")}`
       : "";
 
@@ -314,9 +314,9 @@ export default function EquityAssistPage() {
         aiMessages,
         {
           agentId: "equity-assist",
-          agentName: "Equity Assist â Research & Consultation",
+          agentName: "Equity Assist — Research & Consultation",
           agentPurpose: EQUITY_ASSIST_SYSTEM,
-          systemPromptAddendum: `Current platform page: ${location.pathname}\nThe user is the Equity and Inclusion Operations Consultant. You are their exponential extension â multiply their capacity across every domain.${researchContext}`,
+          systemPromptAddendum: `Current platform page: ${location.pathname}\nThe user is the Equity and Inclusion Operations Consultant. You are their exponential extension — multiply their capacity across every domain.${researchContext}`,
           maxTokens: researchMode === "deep" ? 8192 : 4096,
           temperature: 0.2,
         },
@@ -406,7 +406,7 @@ export default function EquityAssistPage() {
             <EditableText field="ea-title" defaultValue="Equity Assist" />
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            <EditableText field="ea-subtitle" defaultValue="AI research & consultation â integrated across all knowledge bases, data systems, and 14 specialized agents" />
+            <EditableText field="ea-subtitle" defaultValue="AI research & consultation — integrated across all knowledge bases, data systems, and 14 specialized agents" />
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -438,21 +438,21 @@ export default function EquityAssistPage() {
           <span className="relative inline-flex rounded-full h-2 w-2 bg-[#78BE21]"></span>
         </span>
         <span>Equity Assist Active</span>
-        <span className="mx-1">Â·</span>
+        <span className="mx-1">·</span>
         <span>{KB_DOCUMENTS.length} knowledge base documents</span>
-        <span className="mx-1">Â·</span>
+        <span className="mx-1">·</span>
         <span>{RESEARCH_AGENTS.length} agent domains</span>
-        <span className="mx-1">Â·</span>
+        <span className="mx-1">·</span>
         <span>Sniff Check L1 Active</span>
         {selectedDocs.length > 0 && (
           <>
-            <span className="mx-1">Â·</span>
+            <span className="mx-1">·</span>
             <Badge variant="outline" className="text-[10px] h-5">{selectedDocs.length} docs selected</Badge>
           </>
         )}
         {selectedAgents.length > 0 && (
           <>
-            <span className="mx-1">Â·</span>
+            <span className="mx-1">·</span>
             <Badge variant="outline" className="text-[10px] h-5">{selectedAgents.length} agents focused</Badge>
           </>
         )}
@@ -461,7 +461,7 @@ export default function EquityAssistPage() {
       {/* Main layout: sidebar + research area */}
       <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4" style={{ minHeight: "calc(100vh - 320px)" }}>
 
-        {/* LEFT PANEL â Knowledge & Agents */}
+        {/* LEFT PANEL — Knowledge & Agents */}
         <div className="space-y-4 overflow-y-auto" style={{ maxHeight: "calc(100vh - 320px)" }}>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -550,7 +550,7 @@ export default function EquityAssistPage() {
                     )}
                   >
                     <div className="flex items-center gap-2">
-                      <div className={cn(w-1.5 h-1.5 rounded-full flex-shrink-0", selectedDocs.includes(doc.id) ? "bg-[#78BE21]" : "bg-gray-300")} />
+                      <div className={cn(�w-1.5 h-1.5 rounded-full flex-shrink-0", selectedDocs.includes(doc.id) ? "bg-[#78BE21]" : "bg-gray-300")} />
                       <span className="font-medium text-[11px] truncate">{doc.title}</span>
                       <Badge className={cn("text-[8px] h-3.5 ml-auto flex-shrink-0", AUTHORITY_COLORS[doc.authorityLevel])}>
                         {doc.authorityLevel}
@@ -600,34 +600,34 @@ export default function EquityAssistPage() {
               </div>
               <div className="pt-2 border-t">
                 <Link to="/agents" className="text-[11px] text-[#003865] hover:underline">
-                  View all agents in detail â
+                  View all agents in detail →
                 </Link>
               </div>
             </TabsContent>
           </Tabs>
         </div>
 
-        {/* RIGHT PANEL â Research Chat */}
+        {/* RIGHT PANEL — Research Chat */}
         <div className="flex flex-col border rounded-xl bg-white overflow-hidden" style={{ maxHeight: "calc(100vh - 320px)" }}>
           {/* Chat header */}
           <div className="flex items-center justify-between px-4 py-2.5 bg-[#003865] text-white">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-[#78BE21]/20 border border-[#78BE21]/30 flex items-center justify-center">
-                <span className="text-base">â¨</span>
+                <span className="text-base">✨</span>
               </div>
               <div>
                 <h3 className="font-semibold text-sm">Equity Assist Research</h3>
-                <p className="text-[10px] text-white/60">{researchMode === "deep" ? "Deep Research" : "Standard"} Â· CLAS Â· HCBS Â· DHS Toolkit Â· Sniff Check L1</p>
+                <p className="text-[10px] text-white/60">{researchMode === "deep" ? "Deep Research" : "Standard"} · CLAS · HCBS · DHS Toolkit · Sniff Check L1</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
               {messages.length > 0 && (
                 <>
                   <button onClick={downloadTranscript} className="p-1.5 rounded-md hover:bg-white/10 text-white/70 hover:text-white text-xs" title="Download transcript">
-                    â
+                    ↓
                   </button>
                   <button onClick={clearSession} className="p-1.5 rounded-md hover:bg-white/10 text-white/70 hover:text-white text-xs" title="New research session">
-                    â»
+                    ↻
                   </button>
                 </>
               )}
@@ -639,7 +639,7 @@ export default function EquityAssistPage() {
             {messages.length === 0 && !isLoading ? (
               <div className="p-6 text-center">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#003865] to-[#005a9e] mx-auto mb-4 flex items-center justify-center shadow-lg">
-                  <span className="text-3xl">â¨</span>
+                  <span className="text-3xl">✨</span>
                 </div>
                 <h4 className="font-semibold text-base text-[#003865]">Equity Assist Research Interface</h4>
                 <p className="text-xs text-muted-foreground mt-2 max-w-md mx-auto leading-relaxed">
@@ -652,17 +652,17 @@ export default function EquityAssistPage() {
                 </div>
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-lg mx-auto text-left">
                   <div className="p-3 rounded-xl bg-muted/50 border">
-                    <span className="text-base">ð</span>
+                    <span className="text-base">📚</span>
                     <p className="text-[11px] font-medium mt-1">Select Sources</p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">Choose knowledge base docs and agent domains in the left panel</p>
                   </div>
                   <div className="p-3 rounded-xl bg-muted/50 border">
-                    <span className="text-base">ð¬</span>
+                    <span className="text-base">🔬</span>
                     <p className="text-[11px] font-medium mt-1">Choose Depth</p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">Standard for quick lookups, Deep Research for comprehensive analysis</p>
                   </div>
                   <div className="p-3 rounded-xl bg-muted/50 border">
-                    <span className="text-base">ð</span>
+                    <span className="text-base">🚀</span>
                     <p className="text-[11px] font-medium mt-1">Research</p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">Use templates or ask your own research question</p>
                   </div>
@@ -674,7 +674,7 @@ export default function EquityAssistPage() {
                   <div key={message.id} className={`flex gap-2.5 ${message.role === "user" ? "flex-row-reverse" : ""}`}>
                     {message.role === "assistant" && (
                       <div className="w-7 h-7 rounded-lg bg-[#78BE21]/15 flex-shrink-0 flex items-center justify-center mt-0.5">
-                        <span className="text-sm">â¨</span>
+                        <span className="text-sm">✨</span>
                       </div>
                     )}
                     {message.role === "user" && (
@@ -710,7 +710,7 @@ export default function EquityAssistPage() {
                 {isLoading && streamingContent && (
                   <div className="flex gap-2.5">
                     <div className="w-7 h-7 rounded-lg bg-[#78BE21]/15 flex-shrink-0 flex items-center justify-center mt-0.5">
-                      <span className="text-sm">â¨</span>
+                      <span className="text-sm">✨</span>
                     </div>
                     <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-muted text-[13px] leading-relaxed">
                       <div className="whitespace-pre-wrap">{streamingContent}</div>
@@ -722,7 +722,7 @@ export default function EquityAssistPage() {
                 {isLoading && !streamingContent && (
                   <div className="flex gap-2.5">
                     <div className="w-7 h-7 rounded-lg bg-[#78BE21]/15 flex-shrink-0 flex items-center justify-center mt-0.5">
-                      <span className="text-sm">â¨</span>
+                      <span className="text-sm">✨</span>
                     </div>
                     <div className="rounded-2xl px-4 py-3 bg-muted">
                       <span className="text-xs text-muted-foreground flex items-center gap-2">
@@ -747,8 +747,8 @@ export default function EquityAssistPage() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={researchMode === "deep"
-                  ? "Ask a deep research question â cross-system synthesis, equity analysis, policy review..."
-                  : "Ask Equity Assist â quick lookups, data points, framework references..."}
+                  ? "Ask a deep research question — cross-system synthesis, equity analysis, policy review..."
+                  : "Ask Equity Assist — quick lookups, data points, framework references..."}
                 className="min-h-[44px] max-h-[120px] resize-none text-sm flex-1"
                 disabled={isLoading}
               />
@@ -762,7 +762,7 @@ export default function EquityAssistPage() {
             </div>
             <div className="flex items-center justify-between mt-1.5">
               <p className="text-[10px] text-muted-foreground">
-                DHS Equity Toolkit Â· CLAS Standards Â· HCBS Guidance Â· 13-Point Equity Rubric Â· Sniff Check L1
+                DHS Equity Toolkit · CLAS Standards · HCBS Guidance · 13-Point Equity Rubric · Sniff Check L1
               </p>
               {messages.length > 0 && (
                 <span className="text-[10px] text-muted-foreground">{messages.length} messages</span>
