@@ -19,7 +19,6 @@ import CompletionChecklist from "@/pages/CompletionChecklist";
 import KnowledgeBasePage from "@/pages/KnowledgeBasePage";
 import WorkflowsPage from "@/pages/WorkflowsPage";
 import TemplatesPage from "@/pages/TemplatesPage";
-import EquityAssist from "@/components/EquityAssist";
 import EquityAssistPage from "@/pages/EquityAssistPage";
 
 interface NavItem {
@@ -78,7 +77,7 @@ function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) 
             </div>
           </div>
           <button onClick={onClose} className="lg:hidden text-white/60 hover:text-white text-sm px-1" aria-label="Close menu">
-            ✕
+            
           </button>
         </div>
 
@@ -266,8 +265,7 @@ function AppShell() {
           Minnesota Department of Human Services · Disability Services Division · v3.0 · 2026
         </footer>
       </div>
-      <EquityAssist />
-      <Toaster position="top-right" richColors toastOptions={{ classNames: { toast: "font-sans" } }} />
+<Toaster position="top-right" richColors toastOptions={{ classNames: { toast: "font-sans" } }} />
     </div>
   );
 }
