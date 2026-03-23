@@ -196,7 +196,7 @@ function Header({ onMenuClick, zoom, onZoomChange }: { onMenuClick: () => void; 
           />
 
           <Button size="sm" variant="outline" onClick={handleDownload} className="text-xs h-8">
-            Export
+            Download
           </Button>
 
           {/* Zoom control */}
