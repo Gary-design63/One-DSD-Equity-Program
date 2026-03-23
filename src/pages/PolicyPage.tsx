@@ -277,7 +277,7 @@ export default function PolicyPage() {
                             View
                           </Button>
                           <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
-                            Export
+                            Download
                           </Button>
                           <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
                             Edit
