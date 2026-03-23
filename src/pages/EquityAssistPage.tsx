@@ -550,7 +550,7 @@ export default function EquityAssistPage() {
                     )}
                   >
                     <div className="flex items-center gap-2">
-                      <div className={cn(�w-1.5 h-1.5 rounded-full flex-shrink-0", selectedDocs.includes(doc.id) ? "bg-[#78BE21]" : "bg-gray-300")} />
+                      <div className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", selectedDocs.includes(doc.id) ? "bg-[#78BE21]" : "bg-gray-300")} />
                       <span className="font-medium text-[11px] truncate">{doc.title}</span>
                       <Badge className={cn("text-[8px] h-3.5 ml-auto flex-shrink-0", AUTHORITY_COLORS[doc.authorityLevel])}>
                         {doc.authorityLevel}
