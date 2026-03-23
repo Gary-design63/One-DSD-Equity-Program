@@ -16,6 +16,9 @@ import PolicyPage from "@/pages/PolicyPage";
 import EquityMetricsPage from "@/pages/EquityMetricsPage";
 import SettingsPage from "@/pages/SettingsPage";
 import CompletionChecklist from "@/pages/CompletionChecklist";
+import KnowledgeBasePage from "@/pages/KnowledgeBasePage";
+import WorkflowsPage from "@/pages/WorkflowsPage";
+import TemplatesPage from "@/pages/TemplatesPage";
 
 interface NavItem {
   label: string;
@@ -30,6 +33,10 @@ const NAV_ITEMS: NavItem[] = [
   // Analysis
   { label: "Equity Metrics",     path: "/metrics",   group: "Analysis" },
   { label: "Policy Documents",   path: "/policy",    group: "Analysis" },
+  { label: "Knowledge Base",     path: "/knowledge", group: "Analysis" },
+  // Operations
+  { label: "Workflows",          path: "/workflows", group: "Processes" },
+  { label: "Templates",          path: "/templates", group: "Processes" },
   // Community & Learning
   { label: "Communities",        path: "/community",  group: "Community" },
   { label: "Training",           path: "/training",   group: "Learning" },
@@ -39,7 +46,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Settings",           path: "/settings",   group: "System" },
 ];
 
-const NAV_GROUPS = ["Operations", "Analysis", "Community", "Learning", "System"];
+const NAV_GROUPS = ["Operations", "Analysis", "Processes", "Community", "Learning", "System"];
 
 function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const location = useLocation();
@@ -242,6 +249,9 @@ function AppShell() {
             <Route path="/training" element={<TrainingPage />} />
             <Route path="/goals" element={<GoalsPage />} />
             <Route path="/policy" element={<PolicyPage />} />
+            <Route path="/knowledge" element={<KnowledgeBasePage />} />
+            <Route path="/workflows" element={<WorkflowsPage />} />
+            <Route path="/templates" element={<TemplatesPage />} />
             <Route path="/checklist" element={<CompletionChecklist />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />

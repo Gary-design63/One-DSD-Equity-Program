@@ -4,7 +4,7 @@ import path from "path";
 
 // Cloud-only build — no local server configuration
 export default defineConfig({
-  base: "/One-DSD-Equity-Program/",
+  base: "/",
   build: {
     outDir: "dist",
     sourcemap: false,
