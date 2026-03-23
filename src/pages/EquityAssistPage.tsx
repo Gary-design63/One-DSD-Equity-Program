@@ -66,20 +66,20 @@ interface ResearchAgent {
 }
 
 const RESEARCH_AGENTS: ResearchAgent[] = [
-  { id: "policy", name: "Policy Drafting", domain: "Policy & compliance", icon: "📜" },
-  { id: "equity-data", name: "Equity Data", domain: "Disparities & metrics", icon: "📊" },
-  { id: "training", name: "Training Design", domain: "Staff development", icon: "🎓" },
-  { id: "community", name: "Community Outreach", domain: "Engagement & partnerships", icon: "🤝" },
-  { id: "dwrs", name: "DWRS Rate Analysis", domain: "Waiver rates & funding", icon: "💰" },
-  { id: "olmstead", name: "Olmstead Monitoring", domain: "Integration compliance", icon: "🏠" },
-  { id: "employment", name: "Employment First", domain: "Competitive integrated employment", icon: "💼" },
-  { id: "waiver", name: "Waiver Navigator", domain: "CADI/DD/BI/EW navigation", icon: "🧭" },
-  { id: "hcbs", name: "HCBS Compliance", domain: "Settings rule & CMS", icon: "✅" },
-  { id: "stakeholder", name: "Stakeholder Engagement", domain: "Advisory & input", icon: "👥" },
-  { id: "legislative", name: "Legislative Affairs", domain: "Bills & fiscal analysis", icon: "⚖️" },
-  { id: "hub", name: "Disability Hub MN", domain: "Service navigation", icon: "🌐" },
-  { id: "comms", name: "Communications", domain: "Plain language & messaging", icon: "📣" },
-  { id: "meta-audit", name: "Meta-Audit & QA", domain: "Cross-system quality", icon: "🔍" },
+  { id: "policy", name: "Policy Drafting", domain: "Policy & compliance", icon: "" },
+  { id: "equity-data", name: "Equity Data", domain: "Disparities & metrics", icon: "" },
+  { id: "training", name: "Training Design", domain: "Staff development", icon: "" },
+  { id: "community", name: "Community Outreach", domain: "Engagement & partnerships", icon: "" },
+  { id: "dwrs", name: "DWRS Rate Analysis", domain: "Waiver rates & funding", icon: "" },
+  { id: "olmstead", name: "Olmstead Monitoring", domain: "Integration compliance", icon: "" },
+  { id: "employment", name: "Employment First", domain: "Competitive integrated employment", icon: "" },
+  { id: "waiver", name: "Waiver Navigator", domain: "CADI/DD/BI/EW navigation", icon: "" },
+  { id: "hcbs", name: "HCBS Compliance", domain: "Settings rule & CMS", icon: "" },
+  { id: "stakeholder", name: "Stakeholder Engagement", domain: "Advisory & input", icon: "" },
+  { id: "legislative", name: "Legislative Affairs", domain: "Bills & fiscal analysis", icon: "" },
+  { id: "hub", name: "Disability Hub MN", domain: "Service navigation", icon: "" },
+  { id: "comms", name: "Communications", domain: "Plain language & messaging", icon: "" },
+  { id: "meta-audit", name: "Meta-Audit & QA", domain: "Cross-system quality", icon: "" },
 ];
 
 /* ───────────────────────────────────────────────────────────────
@@ -142,7 +142,7 @@ interface ResearchTemplate {
 
 const RESEARCH_TEMPLATES: ResearchTemplate[] = [
   {
-    icon: "📊",
+    icon: "",
     label: "Equity Disparity Analysis",
     tier: "Tier 2",
     prompt: "Conduct a comprehensive equity disparity analysis across all service dimensions. Pull data from equity metrics, community profiles, and workforce reports. Identify the top 5 most critical gaps, analyze root causes using the 13-Point Equity Rubric, and recommend priority interventions aligned to the DEIA 3-year plan.",
@@ -150,7 +150,7 @@ const RESEARCH_TEMPLATES: ResearchTemplate[] = [
     kbDocs: ["kb7", "kb8", "kb13"],
   },
   {
-    icon: "📋",
+    icon: "",
     label: "Policy Equity Review",
     tier: "Tier 2",
     prompt: "Perform a policy equity review using the Sniff Check methodology and Racial Equity Impact Assessment Tool. Which current policies need review? Apply the equity lens (who benefits, who is burdened, who was consulted, who decides) and cross-reference with CLAS Standards and HCBS requirements.",
@@ -158,7 +158,7 @@ const RESEARCH_TEMPLATES: ResearchTemplate[] = [
     kbDocs: ["kb6", "kb7", "kb9"],
   },
   {
-    icon: "👥",
+    icon: "",
     label: "Community Context Synthesis",
     tier: "Tier 2",
     prompt: "Synthesize the full community context for current DSD programs. Compile community profiles, cultural contexts, service gaps, language needs, and partnership status. Focus on underserved populations and communities with the widest disparity gaps. Include recommendations for targeted outreach.",
@@ -166,7 +166,7 @@ const RESEARCH_TEMPLATES: ResearchTemplate[] = [
     kbDocs: ["kb12", "kb14", "kb15"],
   },
   {
-    icon: "🎯",
+    icon: "",
     label: "DEIA Goal Progress Assessment",
     tier: "Tier 3",
     prompt: "Assess progress on all equity goals across the 6-Goal Operational Plan and DEIA 3-year implementation plan. For each goal: current status, barriers identified, data trends, and recommended accelerators. Include cross-system dependencies and stakeholder mapping.",
@@ -174,7 +174,7 @@ const RESEARCH_TEMPLATES: ResearchTemplate[] = [
     kbDocs: ["kb4", "kb8", "kb10"],
   },
   {
-    icon: "📖",
+    icon: "",
     label: "CLAS Standards Compliance",
     tier: "Tier 2",
     prompt: "Evaluate DSD performance against all 15 CLAS Standards. For each standard: current compliance level, evidence, gaps identified, and remediation steps. Pay special attention to Standards 1-3 (Governance), 4-7 (Communication & Language), and 8-14 (Organizational Supports).",
@@ -182,7 +182,7 @@ const RESEARCH_TEMPLATES: ResearchTemplate[] = [
     kbDocs: ["kb3", "kb6", "kb12"],
   },
   {
-    icon: "🔍",
+    icon: "",
     label: "Cross-System Research Query",
     tier: "Tier 3",
     prompt: "I need a cross-system research synthesis. Query all 14 agent domains and the full knowledge base to answer: What are the most significant equity gaps across ALL systems (policy, data, training, community, rates, employment, compliance, legislative)? Identify interconnections and recommend a prioritized action plan.",
@@ -190,7 +190,7 @@ const RESEARCH_TEMPLATES: ResearchTemplate[] = [
     kbDocs: KB_DOCUMENTS.map(d => d.id),
   },
   {
-    icon: "💰",
+    icon: "",
     label: "DWRS Rate Equity Analysis",
     tier: "Tier 2",
     prompt: "Analyze the Disability Waiver Rate System through an equity lens. Are rates equitable across demographics and geographies? Identify disparities in provider reimbursement, access gaps in rural/tribal communities, and the impact on workforce stability (DSP wages and turnover). Recommend rate adjustments for equity.",
@@ -198,7 +198,7 @@ const RESEARCH_TEMPLATES: ResearchTemplate[] = [
     kbDocs: ["kb5", "kb11", "kb13"],
   },
   {
-    icon: "🏠",
+    icon: "",
     label: "HCBS Settings Compliance",
     tier: "Tier 2",
     prompt: "Provide a comprehensive HCBS Settings Rule compliance assessment. Status against the March 2027 deadline, settings that need remediation, person-centered planning gaps, and community integration benchmarks. Cross-reference with Olmstead Plan requirements and CHOICE Framework outcomes.",
@@ -613,7 +613,7 @@ export default function EquityAssistPage() {
           <div className="flex items-center justify-between px-4 py-2.5 bg-[#003865] text-white">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-[#78BE21]/20 border border-[#78BE21]/30 flex items-center justify-center">
-                <span className="text-base">✨</span>
+                <span className="text-base"></span>
               </div>
               <div>
                 <h3 className="font-semibold text-sm">Equity Assist Research</h3>
@@ -639,7 +639,7 @@ export default function EquityAssistPage() {
             {messages.length === 0 && !isLoading ? (
               <div className="p-6 text-center">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#003865] to-[#005a9e] mx-auto mb-4 flex items-center justify-center shadow-lg">
-                  <span className="text-3xl">✨</span>
+                  <span className="text-3xl"></span>
                 </div>
                 <h4 className="font-semibold text-base text-[#003865]">Equity Assist Research Interface</h4>
                 <p className="text-xs text-muted-foreground mt-2 max-w-md mx-auto leading-relaxed">
@@ -652,17 +652,17 @@ export default function EquityAssistPage() {
                 </div>
                 <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-lg mx-auto text-left">
                   <div className="p-3 rounded-xl bg-muted/50 border">
-                    <span className="text-base">📚</span>
+                    <span className="text-base"></span>
                     <p className="text-[11px] font-medium mt-1">Select Sources</p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">Choose knowledge base docs and agent domains in the left panel</p>
                   </div>
                   <div className="p-3 rounded-xl bg-muted/50 border">
-                    <span className="text-base">🔬</span>
+                    <span className="text-base"></span>
                     <p className="text-[11px] font-medium mt-1">Choose Depth</p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">Standard for quick lookups, Deep Research for comprehensive analysis</p>
                   </div>
                   <div className="p-3 rounded-xl bg-muted/50 border">
-                    <span className="text-base">🚀</span>
+                    <span className="text-base"></span>
                     <p className="text-[11px] font-medium mt-1">Research</p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">Use templates or ask your own research question</p>
                   </div>
@@ -674,7 +674,7 @@ export default function EquityAssistPage() {
                   <div key={message.id} className={`flex gap-2.5 ${message.role === "user" ? "flex-row-reverse" : ""}`}>
                     {message.role === "assistant" && (
                       <div className="w-7 h-7 rounded-lg bg-[#78BE21]/15 flex-shrink-0 flex items-center justify-center mt-0.5">
-                        <span className="text-sm">✨</span>
+                        <span className="text-sm"></span>
                       </div>
                     )}
                     {message.role === "user" && (
@@ -710,7 +710,7 @@ export default function EquityAssistPage() {
                 {isLoading && streamingContent && (
                   <div className="flex gap-2.5">
                     <div className="w-7 h-7 rounded-lg bg-[#78BE21]/15 flex-shrink-0 flex items-center justify-center mt-0.5">
-                      <span className="text-sm">✨</span>
+                      <span className="text-sm"></span>
                     </div>
                     <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-muted text-[13px] leading-relaxed">
                       <div className="whitespace-pre-wrap">{streamingContent}</div>
@@ -722,7 +722,7 @@ export default function EquityAssistPage() {
                 {isLoading && !streamingContent && (
                   <div className="flex gap-2.5">
                     <div className="w-7 h-7 rounded-lg bg-[#78BE21]/15 flex-shrink-0 flex items-center justify-center mt-0.5">
-                      <span className="text-sm">✨</span>
+                      <span className="text-sm"></span>
                     </div>
                     <div className="rounded-2xl px-4 py-3 bg-muted">
                       <span className="text-xs text-muted-foreground flex items-center gap-2">
