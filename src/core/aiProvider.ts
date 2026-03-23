@@ -85,12 +85,14 @@ Purpose: ${agentPurpose}
 
   const outputFormat = `
 === OUTPUT FORMAT REQUIREMENTS ===
-- Executive content: Lead with implications, use headers, bullet points, max 2 pages
+IMPORTANT: Do NOT use markdown formatting (no **, ##, -, >, \`\`\`, or other markdown syntax). Output clean plain text only.
+Use line breaks and indentation for structure. Use CAPS or spacing for emphasis instead of markdown.
+- Executive content: Lead with implications, use clear section titles in CAPS, max 2 pages
 - Community content: Plain language, short paragraphs, define all terms, no acronyms without definition
-- Policy content: Cite statutes and authority, structured with clear sections, include equity implications
+- Policy content: Cite statutes and authority, structured with clear labeled sections, include equity implications
 - Training content: Include learning objectives, interactive elements, assessment questions
-- Data reports: Lead with key finding, disaggregate, visualize, recommend action
-- All content: No placeholders, complete and deployment-ready
+- Data reports: Lead with key finding, disaggregate, recommend action
+- All content: No placeholders, no markdown formatting, complete and deployment-ready
 `;
 
   const additionalContext = systemPromptAddendum

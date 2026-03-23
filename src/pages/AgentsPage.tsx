@@ -11,18 +11,18 @@ import type { Agent } from "@/types";
 
 const AGENTS: Agent[] = [
   {
-    id: "policy-drafting",
-    name: "Policy Drafting Agent",
-    description: "Drafts equity-aligned policy documents, testimony, guidance memos, and legislative briefs. Applies all 39 meta-skills. Outputs are draft-ready, never placeholder.",
+    id: "policy-legislative",
+    name: "Policy & Legislative Agent",
+    description: "Full policy lifecycle: drafts equity-aligned policy documents, testimony, guidance memos, legislative briefs, bill tracking, comment letters, and impact analyses. Covers both internal policy development and external legislative engagement.",
     category: "policy",
     status: "active",
-    capabilities: ["Policy briefs", "Legislative testimony", "Guidance memos", "Olmstead compliance review", "Equity impact analysis", "CBSM interpretation"],
+    capabilities: ["Policy briefs", "Legislative testimony", "Guidance memos", "Bill tracking", "Comment letters", "Legislative impact analysis", "Olmstead compliance review", "Equity impact analysis", "CBSM interpretation", "Budget request support"],
     metaSkillsDomains: ["M1", "M2", "M4"],
     color: "#003865",
-    messageCount: 842,
-    successRate: 99.2,
-    averageResponseTime: 18,
-    tags: ["high-use", "policy", "olmstead"]
+    messageCount: 930,
+    successRate: 99.1,
+    averageResponseTime: 20,
+    tags: ["high-use", "policy", "legislative", "olmstead", "testimony"]
   },
   {
     id: "equity-data",
@@ -53,130 +53,46 @@ const AGENTS: Agent[] = [
     tags: ["training", "curriculum", "accessibility"]
   },
   {
-    id: "community-outreach",
-    name: "Community Outreach Agent",
-    description: "Creates culturally responsive outreach materials for BIPOC disability communities. Supports East African, Hmong, Latinx, and Indigenous community engagement. Language justice focused.",
+    id: "community-engagement",
+    name: "Community Engagement Agent",
+    description: "Unified community voice: creates culturally responsive outreach materials, designs stakeholder engagement processes, manages advisory panels, and tracks community input. Supports East African, Hmong, Latinx, and Indigenous communities with language justice focus.",
     category: "community",
     status: "active",
-    capabilities: ["Community newsletters", "Outreach scripts", "Event planning", "Cultural adaptation", "Trusted messenger support", "Language access planning"],
-    metaSkillsDomains: ["M2", "M6"],
+    capabilities: ["Community newsletters", "Outreach scripts", "Event planning", "Cultural adaptation", "Trusted messenger support", "Language access planning", "Meeting facilitation guides", "Advisory panel design", "Engagement strategy", "Action item tracking", "Community input synthesis"],
+    metaSkillsDomains: ["M2", "M5", "M6"],
     color: "#8B4513",
-    messageCount: 389,
-    successRate: 96.4,
-    averageResponseTime: 25,
-    tags: ["community", "outreach", "language-access"]
+    messageCount: 590,
+    successRate: 96.8,
+    averageResponseTime: 26,
+    tags: ["community", "outreach", "language-access", "engagement", "stakeholders"]
   },
   {
-    id: "dwrs-rate",
-    name: "DWRS Rate Analysis Agent",
-    description: "Analyzes Disability Waiver Rate System (DWRS) rate impacts, models 2026 transitions, calculates equity implications of rate changes, and supports provider sustainability analysis.",
+    id: "service-navigation",
+    name: "Service Navigation Agent",
+    description: "End-to-end waiver navigation, rate analysis, and benefits counseling. Helps staff and communities navigate CADI, DD, BI, EW, and AC waivers, models DWRS rate impacts, and supports Disability Hub MN resource navigation in multiple languages.",
     category: "waiver",
     status: "active",
-    capabilities: ["Rate modeling", "2026 transition analysis", "Provider sustainability", "DSP wage analysis", "Geographic equity", "Budget impact projections"],
-    metaSkillsDomains: ["M3", "M4", "M5"],
+    capabilities: ["Waiver comparison", "Eligibility guidance", "Plain language summaries", "CBSM navigation", "Rate modeling", "2026 transition analysis", "DSP wage analysis", "Benefits navigation", "Multilingual materials", "Work incentives planning", "Hub coordination"],
+    metaSkillsDomains: ["M2", "M3", "M4", "M5", "M6"],
     color: "#003865",
-    messageCount: 278,
-    successRate: 98.2,
-    averageResponseTime: 28,
-    tags: ["dwrs", "rates", "finance"]
-  },
-  {
-    id: "olmstead-monitor",
-    name: "Olmstead Monitoring Agent",
-    description: "Tracks Minnesota Olmstead Plan progress, identifies compliance gaps, generates transition planning support, and monitors community integration outcomes.",
-    category: "compliance",
-    status: "active",
-    capabilities: ["Progress monitoring", "Compliance gap analysis", "Transition planning", "Community integration reports", "Institutional to community tracking", "Subcabinet reporting"],
-    metaSkillsDomains: ["M1", "M4"],
-    color: "#003865",
-    messageCount: 195,
-    successRate: 99.5,
+    messageCount: 1133,
+    successRate: 98.5,
     averageResponseTime: 20,
-    tags: ["olmstead", "compliance", "community-integration"]
+    tags: ["waiver", "navigation", "dwrs", "rates", "disability-hub", "benefits"]
   },
   {
-    id: "employment-first",
-    name: "Employment First Agent",
-    description: "Supports Employment First policy implementation. Analyzes employment outcome disparities, creates supported employment training content, and generates Employment First compliance materials.",
-    category: "employment",
-    status: "active",
-    capabilities: ["Employment outcome analysis", "VRS coordination", "Provider training", "Customized employment planning", "Disparity reporting", "Policy compliance review"],
-    metaSkillsDomains: ["M1", "M3", "M4"],
-    color: "#1e6b3e",
-    messageCount: 167,
-    successRate: 97.6,
-    averageResponseTime: 24,
-    tags: ["employment-first", "vrs", "outcomes"]
-  },
-  {
-    id: "waiver-navigator",
-    name: "Waiver Navigation Agent",
-    description: "Helps staff and community partners navigate CADI, DD, BI, EW, and AC waiver programs. Creates plain-language guides, eligibility explanations, and service planning support.",
-    category: "waiver",
-    status: "active",
-    capabilities: ["Waiver comparison", "Eligibility guidance", "Service descriptions", "Plain language summaries", "CBSM navigation", "Person-centered planning support"],
-    metaSkillsDomains: ["M2", "M4"],
-    color: "#003865",
-    messageCount: 543,
-    successRate: 98.9,
-    averageResponseTime: 16,
-    tags: ["waiver", "navigation", "plain-language"]
-  },
-  {
-    id: "hcbs-settings",
-    name: "HCBS Settings Compliance Agent",
-    description: "Reviews provider settings for HCBS Settings Rule compliance. Conducts virtual site review assessments, generates remediation plans, and tracks compliance timelines.",
+    id: "compliance-integration",
+    name: "Compliance & Integration Agent",
+    description: "Unified compliance monitoring: tracks Olmstead Plan progress, reviews HCBS Settings Rule compliance, monitors Employment First outcomes, generates remediation plans, and ensures community integration across all programs.",
     category: "compliance",
     status: "active",
-    capabilities: ["Settings review", "Compliance checklist", "Remediation planning", "Site assessment", "Provider guidance", "Institutional settings identification"],
-    metaSkillsDomains: ["M4", "M5"],
-    color: "#5c3317",
-    messageCount: 134,
-    successRate: 99.1,
-    averageResponseTime: 35,
-    tags: ["hcbs", "compliance", "settings-rule"]
-  },
-  {
-    id: "stakeholder-engagement",
-    name: "Stakeholder Engagement Agent",
-    description: "Designs and manages stakeholder engagement processes, creates meeting materials, generates follow-up summaries, and tracks action items from advisory panels and community sessions.",
-    category: "community",
-    status: "active",
-    capabilities: ["Meeting facilitation guides", "Advisory panel design", "Engagement strategy", "Action item tracking", "Community input synthesis", "Accessibility planning"],
-    metaSkillsDomains: ["M5", "M6"],
+    capabilities: ["Olmstead progress monitoring", "HCBS settings review", "Employment outcome analysis", "Compliance gap analysis", "Transition planning", "Remediation planning", "Site assessment", "VRS coordination", "Subcabinet reporting", "Institutional settings identification"],
+    metaSkillsDomains: ["M1", "M3", "M4", "M5"],
     color: "#1e6b3e",
-    messageCount: 201,
-    successRate: 97.3,
-    averageResponseTime: 27,
-    tags: ["engagement", "stakeholders", "advisory"]
-  },
-  {
-    id: "legislative-affairs",
-    name: "Legislative Affairs Agent",
-    description: "Monitors Minnesota legislative session, tracks disability equity bills, drafts testimony and comment letters, generates legislative impact analyses for equity implications.",
-    category: "policy",
-    status: "active",
-    capabilities: ["Bill tracking", "Testimony drafting", "Comment letters", "Legislative impact analysis", "Session monitoring", "Budget request support"],
-    metaSkillsDomains: ["M2", "M4"],
-    color: "#003865",
-    messageCount: 88,
+    messageCount: 496,
     successRate: 98.8,
-    averageResponseTime: 33,
-    tags: ["legislative", "testimony", "policy"]
-  },
-  {
-    id: "disability-hub",
-    name: "Disability Hub MN Agent",
-    description: "Supports Disability Hub MN resource navigation, benefits counseling scripts, and community connection workflows. Creates accessible resource guides in multiple languages.",
-    category: "operations",
-    status: "active",
-    capabilities: ["Benefits navigation", "Resource guides", "Multilingual materials", "Community referrals", "Work incentives planning", "Hub coordination"],
-    metaSkillsDomains: ["M2", "M6"],
-    color: "#1e6b3e",
-    messageCount: 312,
-    successRate: 98.1,
-    averageResponseTime: 19,
-    tags: ["disability-hub", "benefits", "navigation"]
+    averageResponseTime: 25,
+    tags: ["olmstead", "hcbs", "compliance", "employment-first", "community-integration"]
   },
   {
     id: "communications",
@@ -194,7 +110,7 @@ const AGENTS: Agent[] = [
   },
   {
     id: "meta-audit",
-    name: "Meta-Audit and QA Agent",
+    name: "Meta-Audit & QA Agent",
     description: "Runs L1/L2/L3 Sniff Checks on all agent outputs. Reviews for equity alignment, ableist language, structural analysis quality, and force multiplier compliance. Quality gate for the platform.",
     category: "operations",
     status: "active",
@@ -209,15 +125,14 @@ const AGENTS: Agent[] = [
 ];
 
 const categoryLabels: Record<string, string> = {
-  policy: "Policy",
-  data: "Data",
+  policy: "Policy & Legislative",
+  data: "Data & Analytics",
   training: "Training",
   community: "Community",
-  operations: "Operations",
+  operations: "Operations & QA",
   communications: "Communications",
   compliance: "Compliance",
-  employment: "Employment",
-  waiver: "Waiver"
+  waiver: "Service Navigation"
 };
 
 const categoryColors: Record<string, string> = {
@@ -228,7 +143,6 @@ const categoryColors: Record<string, string> = {
   operations: "bg-gray-100 text-gray-700",
   communications: "bg-pink-100 text-pink-700",
   compliance: "bg-red-100 text-red-700",
-  employment: "bg-teal-100 text-teal-700",
   waiver: "bg-indigo-100 text-indigo-700"
 };
 

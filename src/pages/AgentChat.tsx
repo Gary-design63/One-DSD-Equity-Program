@@ -19,13 +19,13 @@ const AGENT_CONFIG: Record<string, {
   starters: string[];
   outputType: "draft" | "policy" | "data" | "communication" | "training" | "report";
 }> = {
-  "policy-drafting": {
-    name: "Policy Drafting Agent",
-    purpose: "Draft equity-aligned policy documents, testimony, guidance memos, and legislative briefs for Minnesota DSD",
+  "policy-legislative": {
+    name: "Policy & Legislative Agent",
+    purpose: "Full policy lifecycle for Minnesota DSD: draft equity-aligned policy documents, testimony, guidance memos, legislative briefs, bill tracking, comment letters, and impact analyses",
     starters: [
       "Draft a policy brief on reducing racial disparities in CADI waiver access",
       "Write legislative testimony supporting Employment First funding for FY2026",
-      "Create an equity impact analysis for proposed HCBS rate changes",
+      "Analyze the equity implications of proposed Medicaid managed care expansion",
       "Draft a guidance memo on language access obligations for county case managers"
     ],
     outputType: "policy"
@@ -52,108 +52,42 @@ const AGENT_CONFIG: Record<string, {
     ],
     outputType: "training"
   },
-  "community-outreach": {
-    name: "Community Outreach Agent",
-    purpose: "Create culturally responsive outreach materials for BIPOC disability communities with language justice",
+  "community-engagement": {
+    name: "Community Engagement Agent",
+    purpose: "Unified community engagement: create culturally responsive outreach, design stakeholder processes, manage advisory panels, and build trust with BIPOC disability communities",
     starters: [
       "Draft a Disability Hub MN outreach letter for East African communities in Somali",
-      "Create talking points for trusted messengers explaining CADI waiver eligibility",
-      "Design a community engagement plan for Indigenous disability service access",
-      "Write a plain-language guide to self-directed services for Hmong families"
+      "Design a community advisory panel structure for the DSD equity plan",
+      "Create a meeting facilitation guide for a listening session with Latinx disability families",
+      "Write an engagement plan for reaching Greater MN disability communities"
     ],
     outputType: "communication"
   },
-  "dwrs-rate": {
-    name: "DWRS Rate Analysis Agent",
-    purpose: "Analyze Disability Waiver Rate System impacts, model 2026 transitions, and support provider sustainability",
-    starters: [
-      "Analyze how DWRS 2026 changes affect small BIPOC-owned providers",
-      "Calculate the equity implications of proposed DSP wage floor changes",
-      "Model rate impacts for rural vs. metro residential providers under 2026 framework",
-      "What are the DSP workforce stability implications of current DD waiver rates?"
-    ],
-    outputType: "report"
-  },
-  "olmstead-monitor": {
-    name: "Olmstead Monitoring Agent",
-    purpose: "Track Minnesota Olmstead Plan progress and identify community integration compliance gaps",
-    starters: [
-      "Generate an Olmstead progress report for Q4 2024",
-      "Identify gaps in our community transition supports for people leaving nursing facilities",
-      "Draft the annual Olmstead subcabinet report narrative",
-      "Analyze HCBS settings rule compliance status across DD waiver residential providers"
-    ],
-    outputType: "report"
-  },
-  "employment-first": {
-    name: "Employment First Agent",
-    purpose: "Support Employment First policy implementation and analyze employment outcome disparities",
-    starters: [
-      "Analyze racial disparities in competitive integrated employment outcomes",
-      "Create an Employment First training module for day service providers",
-      "Draft a policy brief on VRS-waiver coordination gaps affecting BIPOC job seekers",
-      "Generate an Employment First implementation checklist for counties"
-    ],
-    outputType: "policy"
-  },
-  "waiver-navigator": {
-    name: "Waiver Navigation Agent",
-    purpose: "Help staff and communities navigate Minnesota's CADI, DD, BI, EW, and AC waiver programs",
+  "service-navigation": {
+    name: "Service Navigation Agent",
+    purpose: "End-to-end waiver navigation, DWRS rate analysis, benefits counseling, and Disability Hub MN resource support across all Minnesota waiver programs",
     starters: [
       "Create a plain-language comparison of CADI vs DD waiver for a family",
-      "Explain CADI eligibility criteria in accessible language for a community presentation",
-      "Draft an FAQ about the DD waiver waitlist for county staff",
+      "Analyze how DWRS 2026 changes affect small BIPOC-owned providers",
+      "Create a benefits navigation guide for newly arrived Somali families with disabled members",
       "What HCBS services are available under the Brain Injury waiver?"
     ],
     outputType: "communication"
   },
-  "hcbs-settings": {
-    name: "HCBS Settings Compliance Agent",
-    purpose: "Review provider settings for HCBS Settings Rule compliance and generate remediation plans",
+  "compliance-integration": {
+    name: "Compliance & Integration Agent",
+    purpose: "Unified compliance monitoring: Olmstead Plan progress, HCBS Settings Rule compliance, Employment First outcomes, remediation plans, and community integration tracking",
     starters: [
+      "Generate an Olmstead progress report for Q4 2024",
       "Create a self-assessment checklist for group home HCBS settings rule compliance",
-      "Draft remediation guidance for a provider with rights restriction issues",
-      "Explain the 'institutional settings' determination process to a provider",
-      "Generate a site review protocol for corporate foster care settings"
+      "Analyze racial disparities in competitive integrated employment outcomes",
+      "Identify gaps in community transition supports for people leaving nursing facilities"
     ],
     outputType: "report"
   },
-  "stakeholder-engagement": {
-    name: "Stakeholder Engagement Agent",
-    purpose: "Design stakeholder engagement processes, create meeting materials, and track advisory panel outcomes",
-    starters: [
-      "Design a community advisory panel structure for the DSD equity plan",
-      "Create a meeting facilitation guide for a listening session with Latinx disability families",
-      "Draft an action item tracker template from our last community engagement session",
-      "Write an engagement plan for reaching Greater MN disability communities"
-    ],
-    outputType: "draft"
-  },
-  "legislative-affairs": {
-    name: "Legislative Affairs Agent",
-    purpose: "Monitor Minnesota legislature, draft testimony, and analyze disability equity bill impacts",
-    starters: [
-      "Draft written testimony supporting the DSP wage floor legislation",
-      "Analyze the equity implications of proposed Medicaid managed care expansion",
-      "Create a legislative brief on Employment First funding for the 2025 session",
-      "What bills from the 2024 session affect disability equity in Minnesota?"
-    ],
-    outputType: "policy"
-  },
-  "disability-hub": {
-    name: "Disability Hub MN Agent",
-    purpose: "Support Disability Hub MN resource navigation and multilingual community connection",
-    starters: [
-      "Create a benefits navigation guide for newly arrived Somali families with disabled members",
-      "Draft a Disability Hub MN referral script for county social workers",
-      "Generate a plain-language MA-EPD (work incentive) explanation for job seekers",
-      "Create a Hub resource flyer in both English and Spanish"
-    ],
-    outputType: "communication"
-  },
   "communications": {
     name: "Communications Agent",
-    purpose: "Draft all external communications including press releases, web content, and executive memos",
+    purpose: "Draft all external communications including press releases, web content, social media, and executive memos",
     starters: [
       "Write a press release announcing the new DSD equity dashboard launch",
       "Draft web content explaining the Olmstead Plan for the DHS website",
@@ -163,7 +97,7 @@ const AGENT_CONFIG: Record<string, {
     outputType: "communication"
   },
   "meta-audit": {
-    name: "Meta-Audit and QA Agent",
+    name: "Meta-Audit & QA Agent",
     purpose: "Run Sniff Checks on outputs and ensure equity alignment, language quality, and force multiplier compliance",
     starters: [
       "Run an L2 equity sniff check on this policy document: [paste document]",

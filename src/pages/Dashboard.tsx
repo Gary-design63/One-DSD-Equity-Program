@@ -85,7 +85,7 @@ const logicModelSteps = [
   {
     title: "Inputs",
     color: "bg-[#003865]",
-    items: ["150-180 DSD staff", "8 agents", "30 community profiles", "Training portfolio", "Supabase infrastructure"]
+    items: ["150-180 DSD staff", "8 specialized agents", "30 community profiles", "Training portfolio", "Supabase infrastructure"]
   },
   {
     title: "Activities",
@@ -140,7 +140,7 @@ export default function Dashboard() {
             <EditableText id="dashboard.directive.title" defaultValue="Primary Directive Active — CHOICE Framework" className="text-white" />
           </p>
           <p className="text-xs text-white/70 mt-0.5">
-            <EditableText id="dashboard.directive.body" defaultValue={"\"Every agent, every process, every output must multiply the Consultant's capacity, never divide it.\" — Logic Model · CHOICE Domains (Community, Home, Occupation, Independence, Connections, Equity) · 8 Agents · Sniff Check L1/L2/L3 Active"} className="text-white/70" />
+            <EditableText id="dashboard.directive.body" defaultValue={"\"Every agent, every process, every output must multiply the Consultant's capacity, never divide it.\" — Logic Model · CHOICE Domains (Community, Home, Occupation, Independence, Connections, Equity) · 8 Specialized Agents · Sniff Check L1/L2/L3 Active"} className="text-white/70" />
           </p>
         </div>
       </div>
