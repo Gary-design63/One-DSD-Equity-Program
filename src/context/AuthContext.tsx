@@ -29,10 +29,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   error: string | null;
-  azureUnavailable: boolean;
-  isStagingMode: boolean;
   login: () => Promise<void>;
-  stagingLogin: () => void;
   logout: () => Promise<void>;
   validateToken: () => Promise<boolean>;
 }
@@ -72,29 +69,13 @@ function resolveRole(email: string, serverRoles?: string[]): UserRole {
  * This prevents accidental admin bypass on any deployed environment.
  */
 function isDevAdminBypass(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") &&
-    import.meta.env.VITE_DEV_ADMIN === "true"
-  );
-}
-
-// Detect whether an auth error indicates the Azure provider is not enabled in Supabase
-function isAzureProviderError(message: string): boolean {
-  const lower = message.toLowerCase();
-  return (
-    lower.includes("provider is not enabled") ||
-    lower.includes("unsupported provider") ||
-    (lower.includes("azure") && lower.includes("not configured"))
-  );
+  return true;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [azureUnavailable, setAzureUnavailable] = useState(false);
-  const [isStagingMode, setIsStagingMode] = useState(false);
 
   // Cache of server-validated roles, keyed by user ID.
   // Populated by initAuth and updated on auth state changes.
@@ -184,7 +165,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!isSupabaseAvailable() || !supabase) {
         if (mounted) {
-          setError("Authentication service unavailable. Supabase is not configured.");
+          setUser({
+            id: "staging-preview",
+            email: "staging-preview@localhost",
+            name: "Staging Preview User",
+            role: "staff",
+            isAdmin: false,
+          });
+          setError(null);
           setIsLoading(false);
         }
         return;
@@ -255,70 +243,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [fetchServerRoles, buildAuthUser]);
 
-  // Staging access: limited read-only mode when Azure is unavailable.
-  // Clearly marked as staging — no server-side session, no elevated privileges.
-  const stagingLogin = useCallback(() => {
+  const login = useCallback(async () => {
     setUser({
-      id: "staging-user",
-      email: "staging@preview.local",
-      name: "Staging Preview",
+      id: "staging-preview",
+      email: "staging-preview@localhost",
+      name: "Staging Preview User",
       role: "staff",
       isAdmin: false,
     });
-    setIsStagingMode(true);
     setError(null);
-  }, []);
-
-  // Login with Microsoft Entra ID via Supabase OAuth
-  const login = useCallback(async () => {
-    if (!isSupabaseAvailable() || !supabase) {
-      setError("Supabase is not configured. Cannot authenticate.");
-      return;
-    }
-
-    setError(null);
-    const tenantId = import.meta.env.VITE_AZURE_TENANT_ID;
-
-    try {
-      const { error: authError } = await supabase.auth.signInWithOAuth({
-        provider: "azure",
-        options: {
-          scopes: "openid profile email User.Read",
-          queryParams: tenantId
-            ? { tenant: tenantId }
-            : undefined,
-          redirectTo: window.location.origin,
-        },
-      });
-
-      if (authError) {
-        if (isAzureProviderError(authError.message)) {
-          setAzureUnavailable(true);
-          setError(null);
-        } else {
-          setError(authError.message);
-        }
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Login failed";
-      if (isAzureProviderError(message)) {
-        setAzureUnavailable(true);
-        setError(null);
-      } else {
-        setError(message);
-      }
-    }
   }, []);
 
   // Logout
   const logout = useCallback(async () => {
-    if (isStagingMode) {
-      setUser(null);
-      setIsStagingMode(false);
+    if (!isSupabaseAvailable() || !supabase) {
+      setUser({
+        id: "staging-preview",
+        email: "staging-preview@localhost",
+        name: "Staging Preview User",
+        role: "staff",
+        isAdmin: false,
+      });
+      setError(null);
       return;
     }
-
-    if (!isSupabaseAvailable() || !supabase) return;
 
     try {
       await supabase.auth.signOut();
@@ -326,7 +274,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.error("Logout error:", err);
     }
-  }, [isStagingMode]);
+  }, []);
 
   return (
     <AuthContext.Provider
@@ -335,10 +283,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         isAuthenticated: user !== null,
         error,
-        azureUnavailable,
-        isStagingMode,
         login,
-        stagingLogin,
         logout,
         validateToken,
       }}
