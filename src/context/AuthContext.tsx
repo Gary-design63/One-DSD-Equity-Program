@@ -29,7 +29,10 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   error: string | null;
+  azureUnavailable: boolean;
+  isStagingMode: boolean;
   login: () => Promise<void>;
+  stagingLogin: () => void;
   logout: () => Promise<void>;
   validateToken: () => Promise<boolean>;
 }
@@ -76,10 +79,22 @@ function isDevAdminBypass(): boolean {
   );
 }
 
+// Detect whether an auth error indicates the Azure provider is not enabled in Supabase
+function isAzureProviderError(message: string): boolean {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("provider is not enabled") ||
+    lower.includes("unsupported provider") ||
+    (lower.includes("azure") && lower.includes("not configured"))
+  );
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [azureUnavailable, setAzureUnavailable] = useState(false);
+  const [isStagingMode, setIsStagingMode] = useState(false);
 
   // Cache of server-validated roles, keyed by user ID.
   // Populated by initAuth and updated on auth state changes.
@@ -240,6 +255,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [fetchServerRoles, buildAuthUser]);
 
+  // Staging access: limited read-only mode when Azure is unavailable.
+  // Clearly marked as staging — no server-side session, no elevated privileges.
+  const stagingLogin = useCallback(() => {
+    setUser({
+      id: "staging-user",
+      email: "staging@preview.local",
+      name: "Staging Preview",
+      role: "staff",
+      isAdmin: false,
+    });
+    setIsStagingMode(true);
+    setError(null);
+  }, []);
+
   // Login with Microsoft Entra ID via Supabase OAuth
   const login = useCallback(async () => {
     if (!isSupabaseAvailable() || !supabase) {
@@ -263,15 +292,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (authError) {
-        setError(authError.message);
+        if (isAzureProviderError(authError.message)) {
+          setAzureUnavailable(true);
+          setError(null);
+        } else {
+          setError(authError.message);
+        }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      const message = err instanceof Error ? err.message : "Login failed";
+      if (isAzureProviderError(message)) {
+        setAzureUnavailable(true);
+        setError(null);
+      } else {
+        setError(message);
+      }
     }
   }, []);
 
   // Logout
   const logout = useCallback(async () => {
+    if (isStagingMode) {
+      setUser(null);
+      setIsStagingMode(false);
+      return;
+    }
+
     if (!isSupabaseAvailable() || !supabase) return;
 
     try {
@@ -280,7 +326,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.error("Logout error:", err);
     }
-  }, []);
+  }, [isStagingMode]);
 
   return (
     <AuthContext.Provider
@@ -289,7 +335,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         isAuthenticated: user !== null,
         error,
+        azureUnavailable,
+        isStagingMode,
         login,
+        stagingLogin,
         logout,
         validateToken,
       }}

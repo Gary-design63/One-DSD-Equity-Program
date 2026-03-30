@@ -254,7 +254,7 @@ function UserBadge() {
 }
 
 function LoginScreen() {
-  const { login, error, isLoading } = useAuth();
+  const { login, stagingLogin, error, isLoading, azureUnavailable } = useAuth();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#003865] to-[#001d33] flex items-center justify-center p-4">
@@ -273,17 +273,52 @@ function LoginScreen() {
             {error}
           </div>
         )}
-        <Button
-          onClick={login}
-          disabled={isLoading}
-          className="w-full bg-[#003865] hover:bg-[#002a4d] text-white py-3"
-        >
-          {isLoading ? "Signing in..." : "Sign in with Microsoft"}
-        </Button>
-        <p className="text-xs text-muted-foreground mt-4">
-          Use your organization Microsoft account (@state.mn.us)
-        </p>
+        {azureUnavailable ? (
+          <>
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg p-3 mb-4 text-left">
+              <p className="font-medium mb-1">Organizational sign-in is being finalized</p>
+              <p className="text-xs text-amber-700">
+                Secure Microsoft Entra ID authentication is currently being configured
+                with MNIT. You can preview the platform in staging mode while this is
+                completed.
+              </p>
+            </div>
+            <Button
+              onClick={stagingLogin}
+              className="w-full bg-[#78BE21] hover:bg-[#5fa018] text-white py-3 mb-3"
+            >
+              Enter Staging Preview
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Staging mode provides read-only access for evaluation purposes.
+              No data will be persisted to your account.
+            </p>
+          </>
+        ) : (
+          <>
+            <Button
+              onClick={login}
+              disabled={isLoading}
+              className="w-full bg-[#003865] hover:bg-[#002a4d] text-white py-3"
+            >
+              {isLoading ? "Signing in..." : "Sign in with Microsoft"}
+            </Button>
+            <p className="text-xs text-muted-foreground mt-4">
+              Use your organization Microsoft account (@state.mn.us)
+            </p>
+          </>
+        )}
       </div>
+    </div>
+  );
+}
+
+function StagingBanner() {
+  const { isStagingMode } = useAuth();
+  if (!isStagingMode) return null;
+  return (
+    <div className="bg-amber-500 text-white text-center text-xs py-1.5 px-4 font-medium">
+      Staging Preview — Organizational sign-in is being finalized. Data will not be saved to your account.
     </div>
   );
 }
@@ -307,6 +342,7 @@ function AppShell() {
       <SkipLink />
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0">
+        <StagingBanner />
         <Header onMenuClick={() => setSidebarOpen(true)} zoom={zoom} onZoomChange={setZoom} />
         <main
           id="main-content"
