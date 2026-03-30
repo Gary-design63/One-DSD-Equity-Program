@@ -81,6 +81,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Cache of server-validated roles, keyed by user ID.
+  // Populated by initAuth and updated on auth state changes.
+  const serverRolesCache = React.useRef<Map<string, string[]>>(new Map());
+
+  // Fetch server-validated roles for a session via the validate-token Edge Function.
+  // Returns the server roles array, or undefined if the Edge Function is unavailable.
+  const fetchServerRoles = useCallback(async (session: { provider_token?: string | null; access_token: string }): Promise<string[] | undefined> => {
+    if (!isSupabaseAvailable() || !supabase) return undefined;
+
+    try {
+      const tokenToValidate = session.provider_token || session.access_token;
+      const { data: validationData } = await supabase.functions.invoke("validate-token", {
+        body: { token: tokenToValidate },
+      });
+      if (validationData?.valid && validationData?.user?.roles) {
+        return validationData.user.roles as string[];
+      }
+    } catch {
+      // Edge Function may not be deployed; caller should fall back to cached/client-side roles
+    }
+    return undefined;
+  }, []);
+
+  // Build an AuthUser from a Supabase session and resolved role
+  const buildAuthUser = useCallback((session: { user: { id: string; email?: string; user_metadata?: Record<string, string> }; access_token: string }, role: UserRole): AuthUser => {
+    const email = session.user.email || "";
+    return {
+      id: session.user.id,
+      email,
+      name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || email,
+      role,
+      isAdmin: role === "equity-consultant" || role === "leadership-reviewer",
+      avatarUrl: session.user.user_metadata?.avatar_url,
+      accessToken: session.access_token,
+    };
+  }, []);
+
   // Validate token server-side via Supabase Edge Function.
   // When Azure AD is configured, sends the provider_token (Azure AD JWT).
   // When Azure AD is not configured, sends the Supabase access_token.
@@ -91,8 +128,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) return false;
 
-      // Use the Azure AD provider token if available (for Azure AD JWT validation),
-      // otherwise fall back to the Supabase access_token (for Supabase JWT validation).
       const tokenToValidate = session.provider_token || session.access_token;
 
       const { data, error: fnError } = await supabase.functions.invoke("validate-token", {
@@ -147,30 +182,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const email = session.user.email || "";
 
           // Attempt server-side token validation to get authoritative roles
-          let serverRoles: string[] | undefined;
-          try {
-            const tokenToValidate = session.provider_token || session.access_token;
-            const { data: validationData } = await supabase.functions.invoke("validate-token", {
-              body: { token: tokenToValidate },
-            });
-            if (validationData?.valid && validationData?.user?.roles) {
-              serverRoles = validationData.user.roles;
-            }
-          } catch {
-            // Edge Function may not be deployed; fall back to client-side role resolution
+          const serverRoles = await fetchServerRoles(session);
+          if (serverRoles && session.user.id) {
+            serverRolesCache.current.set(session.user.id, serverRoles);
           }
 
           const role = resolveRole(email, serverRoles);
           if (mounted) {
-            setUser({
-              id: session.user.id,
-              email,
-              name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || email,
-              role,
-              isAdmin: role === "equity-consultant" || role === "leadership-reviewer",
-              avatarUrl: session.user.user_metadata?.avatar_url,
-              accessToken: session.access_token,
-            });
+            setUser(buildAuthUser(session as Parameters<typeof buildAuthUser>[0], role));
           }
         }
       } catch (err) {
@@ -187,22 +206,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initAuth();
 
-    // Listen for auth state changes
+    // Listen for auth state changes (token refresh, tab re-focus, sign-in/out).
+    // Re-validates roles server-side to avoid reverting to client-side-only resolution.
     let subscription: { unsubscribe: () => void } | null = null;
     if (isSupabaseAvailable() && supabase) {
-      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
         if (session?.user) {
           const email = session.user.email || "";
-          const role = resolveRole(email);
-          setUser({
-            id: session.user.id,
-            email,
-            name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || email,
-            role,
-            isAdmin: role === "equity-consultant" || role === "leadership-reviewer",
-            avatarUrl: session.user.user_metadata?.avatar_url,
-            accessToken: session.access_token,
-          });
+          const userId = session.user.id;
+
+          // Attempt server-side role resolution; fall back to cached roles, then client-side
+          let serverRoles = await fetchServerRoles(session);
+          if (serverRoles) {
+            serverRolesCache.current.set(userId, serverRoles);
+          } else {
+            // Edge Function unavailable — use cached roles from last successful validation
+            serverRoles = serverRolesCache.current.get(userId);
+          }
+
+          const role = resolveRole(email, serverRoles);
+          setUser(buildAuthUser(session as Parameters<typeof buildAuthUser>[0], role));
         } else {
           setUser(null);
         }
@@ -215,7 +238,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription?.unsubscribe();
     };
-  }, []);
+  }, [fetchServerRoles, buildAuthUser]);
 
   // Login with Microsoft Entra ID via Supabase OAuth
   const login = useCallback(async () => {
