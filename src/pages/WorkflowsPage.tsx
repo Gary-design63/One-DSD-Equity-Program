@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import { Activity, Clock3, Play, RotateCcw, Sparkles } from "lucide-react";
 import { EditableText } from "@/components/EditableText";
 import { PageToolbar } from "@/components/PageToolbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface WorkflowStage {
   name: string;
@@ -25,12 +25,6 @@ interface Workflow {
   lastRun: string | null;
   activeRuns: number;
 }
-
-const STAGE_COLORS: Record<string, string> = {
-  complete: "bg-green-500",
-  in_progress: "bg-blue-500",
-  pending: "bg-gray-300",
-};
 
 const workflows: Workflow[] = [
   {
@@ -169,119 +163,260 @@ const workflows: Workflow[] = [
 
 const CATEGORIES = ["All", "Equity Analysis", "Compliance", "Community", "Learning"];
 
-function getProgress(stages: WorkflowStage[]): number {
-  const complete = stages.filter(s => s.status === "complete").length;
-  const inProgress = stages.filter(s => s.status === "in_progress").length;
+function deriveProgress(stages: WorkflowStage[]) {
+  const complete = stages.filter((stage) => stage.status === "complete").length;
+  const inProgress = stages.filter((stage) => stage.status === "in_progress").length;
   return Math.round(((complete + inProgress * 0.5) / stages.length) * 100);
 }
 
+function advanceStage(workflow: Workflow) {
+  const stages = workflow.stages.map((stage) => ({ ...stage }));
+  const currentIndex = stages.findIndex((stage) => stage.status === "in_progress");
+
+  if (currentIndex >= 0) {
+    stages[currentIndex].status = "complete";
+    if (currentIndex + 1 < stages.length) stages[currentIndex + 1].status = "in_progress";
+  } else {
+    const pendingIndex = stages.findIndex((stage) => stage.status === "pending");
+    if (pendingIndex >= 0) stages[pendingIndex].status = "in_progress";
+  }
+
+  return {
+    ...workflow,
+    stages,
+    activeRuns: workflow.activeRuns + 1,
+    lastRun: "Just now",
+  };
+}
+
+function resetWorkflow(workflow: Workflow) {
+  return {
+    ...workflow,
+    stages: workflow.stages.map((stage, index) => ({
+      ...stage,
+      status: index === 0 ? "in_progress" : "pending",
+    })),
+    activeRuns: Math.max(0, workflow.activeRuns - 1),
+    lastRun: "Reset just now",
+  };
+}
+
+const statusStyles: Record<WorkflowStage["status"], string> = {
+  complete: "bg-emerald-500",
+  in_progress: "bg-[hsl(var(--mn-blue))]",
+  pending: "bg-slate-300 dark:bg-slate-700",
+};
+
 export default function WorkflowsPage() {
-  const [tab, setTab] = useState("All");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [workflowState, setWorkflowState] = useState(workflows);
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState(workflows[0].id);
 
-  const filtered = tab === "All" ? workflows : workflows.filter(w => w.category === tab);
+  const filtered = useMemo(
+    () => (selectedCategory === "All" ? workflowState : workflowState.filter((workflow) => workflow.category === selectedCategory)),
+    [selectedCategory, workflowState],
+  );
 
-  const totalActive = workflows.reduce((sum, w) => sum + w.activeRuns, 0);
+  const selectedWorkflow = filtered.find((workflow) => workflow.id === selectedWorkflowId) ?? filtered[0] ?? workflowState[0];
+
+  const totalActive = workflowState.reduce((sum, workflow) => sum + workflow.activeRuns, 0);
+  const l3Count = workflowState.filter((workflow) => workflow.sniffCheckLevel === "L3").length;
+  const averageProgress = Math.round(workflowState.reduce((sum, workflow) => sum + deriveProgress(workflow.stages), 0) / workflowState.length);
+
+  const updateWorkflow = (id: string, updater: (workflow: Workflow) => Workflow) => {
+    setWorkflowState((current) => current.map((workflow) => (workflow.id === id ? updater(workflow) : workflow)));
+  };
 
   return (
-    <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold text-[#003865]" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
-          <EditableText field="wf-title" defaultValue="Workflows" />
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          <EditableText field="wf-subtitle" defaultValue="Guided processes for equity scans, analyses, accessibility reviews, and community engagement" />
-        </p>
-      </div>
+    <div className="mx-auto max-w-7xl space-y-6 px-4 py-5 md:px-6 md:py-6">
+      <section className="hero-panel rounded-[28px] border border-border/70 p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)] md:p-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[hsl(var(--mn-blue))] dark:border-white/10 dark:bg-white/5 dark:text-white">
+              <Sparkles className="h-3.5 w-3.5" />
+              Guided workflows
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold text-foreground md:text-[1.65rem]">
+                <EditableText id="wf-title" defaultValue="Workflows" />
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground md:text-[15px]">
+                <EditableText id="wf-subtitle" defaultValue="Guided processes for equity scans, analyses, accessibility reviews, and community engagement with instant stage controls." />
+              </p>
+            </div>
+          </div>
 
-      <PageToolbar />
+          <div className="grid w-full max-w-xl grid-cols-2 gap-3 lg:grid-cols-4">
+            {[
+              { label: "Workflows", value: workflowState.length, icon: Activity },
+              { label: "Active runs", value: totalActive, icon: Play },
+              { label: "Avg progress", value: `${averageProgress}%`, icon: Clock3 },
+              { label: "L3 reviews", value: l3Count, icon: Sparkles },
+            ].map((metric) => (
+              <div key={metric.label} className="rounded-2xl border border-white/55 bg-white/72 p-4 shadow-[0_14px_40px_rgba(15,23,42,0.06)] backdrop-blur dark:border-white/10 dark:bg-white/5">
+                <div className="flex items-center justify-between gap-3 text-muted-foreground">
+                  <span className="text-[11px] uppercase tracking-[0.16em]">{metric.label}</span>
+                  <metric.icon className="h-4 w-4" />
+                </div>
+                <div className="mt-3 text-2xl font-semibold tracking-tight tabular-nums text-foreground">{metric.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-      {/* Summary stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: "Total Workflows", value: workflows.length, color: "text-[#003865]" },
-          { label: "Active Runs", value: totalActive, color: "text-blue-600" },
-          { label: "Categories", value: CATEGORIES.length - 1, color: "text-teal-600" },
-          { label: "Sniff Check Required", value: workflows.filter(w => w.sniffCheckLevel === "L3").length, color: "text-amber-600" },
-        ].map(s => (
-          <Card key={s.label}>
-            <CardContent className="p-4 text-center">
-              <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-              <div className="text-xs text-muted-foreground mt-1">{s.label}</div>
+      <PageToolbar title="Workflows" />
+
+      <section className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
+        <div className="space-y-4">
+          <Card className="panel-card">
+            <CardHeader>
+              <CardTitle className="text-base">Category focus</CardTitle>
+              <CardDescription>Switch the workflow lane and instantly narrow the set on the right.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {CATEGORIES.map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory(category);
+                    const nextSet = category === "All" ? workflowState : workflowState.filter((workflow) => workflow.category === category);
+                    if (nextSet[0]) setSelectedWorkflowId(nextSet[0].id);
+                  }}
+                  className={selectedCategory === category ? "chip-button chip-button-active w-full justify-center" : "chip-button w-full justify-center"}
+                  data-testid={`button-workflow-category-${category.toLowerCase().replace(/\s+/g, "-")}`}
+                >
+                  {category}
+                </button>
+              ))}
             </CardContent>
           </Card>
-        ))}
-      </div>
 
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          {CATEGORIES.map(c => (
-            <TabsTrigger key={c} value={c} className="text-xs">{c}</TabsTrigger>
-          ))}
-        </TabsList>
+          <Card className="panel-card">
+            <CardHeader>
+              <CardTitle className="text-base">Workflow queue</CardTitle>
+              <CardDescription>Select a workflow to inspect its current stage state.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {filtered.map((workflow) => (
+                <button
+                  key={workflow.id}
+                  type="button"
+                  onClick={() => setSelectedWorkflowId(workflow.id)}
+                  className={workflow.id === selectedWorkflowId ? "list-button list-button-active" : "list-button"}
+                  data-testid={`button-workflow-select-${workflow.id}`}
+                >
+                  <div>
+                    <div className="text-sm font-semibold text-foreground">{workflow.title}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">{workflow.category}</div>
+                  </div>
+                  <div className="text-right text-xs text-muted-foreground">
+                    <div>{deriveProgress(workflow.stages)}%</div>
+                    <div>{workflow.activeRuns} active</div>
+                  </div>
+                </button>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
 
-        {CATEGORIES.map(cat => (
-          <TabsContent key={cat} value={cat} className="mt-4 space-y-4">
-            {filtered.map(wf => (
-              <Card key={wf.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-3">
+        <div className="space-y-4">
+          {selectedWorkflow ? (
+            <Card className="panel-card" data-testid={`card-workflow-detail-${selectedWorkflow.id}`}>
+              <CardHeader className="gap-4">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge className="border-0 bg-[hsl(var(--mn-blue-soft))] text-[hsl(var(--mn-blue))]">{selectedWorkflow.category}</Badge>
+                      <Badge className="border-0 bg-slate-500/10 text-slate-700 dark:text-slate-300">Sniff Check {selectedWorkflow.sniffCheckLevel}</Badge>
+                    </div>
+                    <CardTitle className="mt-3 text-lg font-semibold text-foreground">{selectedWorkflow.title}</CardTitle>
+                    <CardDescription className="mt-2 max-w-3xl text-sm leading-6">{selectedWorkflow.description}</CardDescription>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 rounded-2xl border border-border/60 bg-muted/20 p-3 text-center sm:w-[280px]">
                     <div>
-                      <CardTitle className="text-base text-[#003865]">{wf.title}</CardTitle>
-                      <CardDescription className="mt-1">{wf.description}</CardDescription>
+                      <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Active</div>
+                      <div className="mt-1 text-lg font-semibold tabular-nums">{selectedWorkflow.activeRuns}</div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Badge className="bg-blue-100 text-blue-700 text-[10px]">
-                        {wf.activeRuns} active
-                      </Badge>
-                      <Badge className="bg-gray-100 text-gray-600 text-[10px]">
-                        Sniff Check {wf.sniffCheckLevel}
-                      </Badge>
+                    <div>
+                      <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Progress</div>
+                      <div className="mt-1 text-lg font-semibold tabular-nums">{deriveProgress(selectedWorkflow.stages)}%</div>
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent className="pt-0 space-y-4">
-                  {/* Progress bar */}
-                  <div className="flex items-center gap-3">
-                    <Progress value={getProgress(wf.stages)} className="h-2 flex-1" />
-                    <span className="text-xs font-medium text-muted-foreground w-10 text-right">{getProgress(wf.stages)}%</span>
-                  </div>
+                </div>
 
-                  {/* Stages */}
-                  <div className="flex items-center gap-1 flex-wrap">
-                    {wf.stages.map((stage, i) => (
-                      <div key={i} className="flex items-center gap-1">
-                        <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50">
-                          <div className={`w-2 h-2 rounded-full ${STAGE_COLORS[stage.status]}`} />
-                          <span className="text-[11px] text-muted-foreground">{stage.name}</span>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    className="rounded-xl bg-[hsl(var(--mn-blue))] text-white hover:bg-[hsl(var(--mn-blue-deep))]"
+                    onClick={() => updateWorkflow(selectedWorkflow.id, advanceStage)}
+                    data-testid="button-workflow-advance"
+                  >
+                    <Play className="mr-1.5 h-3.5 w-3.5" />
+                    Advance stage
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={() => updateWorkflow(selectedWorkflow.id, resetWorkflow)}
+                    data-testid="button-workflow-reset"
+                  >
+                    <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                    Reset run
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div>
+                  <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+                    <span className="font-medium text-foreground">Run completion</span>
+                    <span className="text-muted-foreground tabular-nums">{deriveProgress(selectedWorkflow.stages)}%</span>
+                  </div>
+                  <Progress value={deriveProgress(selectedWorkflow.stages)} className="h-2.5" />
+                </div>
+
+                <div className="grid gap-3">
+                  {selectedWorkflow.stages.map((stage, index) => (
+                    <div key={`${selectedWorkflow.id}-${stage.name}`} className="rounded-2xl border border-border/60 bg-card p-4" data-testid={`workflow-stage-${selectedWorkflow.id}-${index}`}>
+                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                        <div className="flex items-start gap-3">
+                          <div className={`mt-1 h-3 w-3 rounded-full ${statusStyles[stage.status]}`} />
+                          <div>
+                            <div className="text-sm font-semibold text-foreground">{stage.name}</div>
+                            <div className="mt-1 text-sm leading-6 text-muted-foreground">{stage.description}</div>
+                          </div>
                         </div>
-                        {i < wf.stages.length - 1 && <span className="text-muted-foreground/40 text-xs">→</span>}
+                        <Badge className="w-fit border-0 bg-muted/80 text-xs capitalize text-muted-foreground">{stage.status.replace("_", " ")}</Badge>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
+                </div>
 
-                  {/* Meta */}
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1 border-t">
-                    <span>Owner: {wf.owner}</span>
-                    <span>·</span>
-                    <span>Est. {wf.estimatedTime}</span>
-                    {wf.lastRun && (
-                      <>
-                        <span>·</span>
-                        <span>Last run: {wf.lastRun}</span>
-                      </>
-                    )}
+                <div className="grid gap-3 md:grid-cols-3">
+                  <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                    <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Owner</div>
+                    <div className="mt-2 text-sm font-semibold text-foreground">{selectedWorkflow.owner}</div>
                   </div>
-
-                  <div className="flex gap-2">
-                    <Button size="sm" className="text-xs h-8 bg-[#003865] hover:bg-[#002a4a] text-white">Start New Run</Button>
-                    <Button size="sm" variant="outline" className="text-xs h-8">View History</Button>
+                  <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                    <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Estimated time</div>
+                    <div className="mt-2 text-sm font-semibold text-foreground">{selectedWorkflow.estimatedTime}</div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </TabsContent>
-        ))}
-      </Tabs>
+                  <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                    <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Last run</div>
+                    <div className="mt-2 text-sm font-semibold text-foreground">{selectedWorkflow.lastRun ?? "No runs yet"}</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="panel-card">
+              <CardContent className="px-6 py-16 text-center text-muted-foreground">No workflows available for this category.</CardContent>
+            </Card>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { ArrowUpRight, Search, ShieldCheck, SlidersHorizontal, Sparkles, TimerReset, Zap } from "lucide-react";
 import { EditableText } from "@/components/EditableText";
 import { PageToolbar } from "@/components/PageToolbar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,11 +18,11 @@ const AGENTS: Agent[] = [
     status: "active",
     capabilities: ["Policy briefs", "Legislative testimony", "Guidance memos", "Olmstead compliance review", "Equity impact analysis", "CBSM interpretation"],
     metaSkillsDomains: ["M1", "M2", "M4"],
-    color: "#003865",
+    color: "hsl(var(--mn-blue))",
     messageCount: 842,
     successRate: 99.2,
     averageResponseTime: 18,
-    tags: ["high-use", "policy", "olmstead"]
+    tags: ["high-use", "policy", "olmstead"],
   },
   {
     id: "equity-data",
@@ -32,11 +32,11 @@ const AGENTS: Agent[] = [
     status: "active",
     capabilities: ["Disparity analysis", "Disaggregated data reports", "Equity dashboards", "Root cause analysis", "Trend identification", "MMIS data interpretation"],
     metaSkillsDomains: ["M1", "M3"],
-    color: "#1e6b3e",
+    color: "hsl(var(--chart-green))",
     messageCount: 623,
     successRate: 97.8,
     averageResponseTime: 22,
-    tags: ["data", "analytics", "equity"]
+    tags: ["data", "analytics", "equity"],
   },
   {
     id: "training-design",
@@ -46,11 +46,11 @@ const AGENTS: Agent[] = [
     status: "active",
     capabilities: ["Curriculum development", "Module design", "Assessment creation", "Facilitator guides", "Accessibility review", "Learning objective writing"],
     metaSkillsDomains: ["M2", "M5", "M6"],
-    color: "#5c3317",
+    color: "hsl(var(--chart-amber))",
     messageCount: 415,
     successRate: 98.7,
     averageResponseTime: 31,
-    tags: ["training", "curriculum", "accessibility"]
+    tags: ["training", "curriculum", "accessibility"],
   },
   {
     id: "community-outreach",
@@ -60,25 +60,25 @@ const AGENTS: Agent[] = [
     status: "active",
     capabilities: ["Community newsletters", "Outreach scripts", "Event planning", "Cultural adaptation", "Trusted messenger support", "Language access planning"],
     metaSkillsDomains: ["M2", "M6"],
-    color: "#8B4513",
+    color: "hsl(var(--chart-rose))",
     messageCount: 389,
     successRate: 96.4,
     averageResponseTime: 25,
-    tags: ["community", "outreach", "language-access"]
+    tags: ["community", "outreach", "language-access"],
   },
   {
     id: "dwrs-rate",
     name: "DWRS Rate Analysis Agent",
-    description: "Analyzes Disability Waiver Rate System (DWRS) rate impacts, models 2026 transitions, calculates equity implications of rate changes, and supports provider sustainability analysis.",
+    description: "Analyzes Disability Waiver Rate System rate impacts, models 2026 transitions, calculates equity implications of rate changes, and supports provider sustainability analysis.",
     category: "waiver",
     status: "active",
     capabilities: ["Rate modeling", "2026 transition analysis", "Provider sustainability", "DSP wage analysis", "Geographic equity", "Budget impact projections"],
     metaSkillsDomains: ["M3", "M4", "M5"],
-    color: "#003865",
+    color: "hsl(var(--mn-blue-deep))",
     messageCount: 278,
     successRate: 98.2,
     averageResponseTime: 28,
-    tags: ["dwrs", "rates", "finance"]
+    tags: ["dwrs", "rates", "finance"],
   },
   {
     id: "olmstead-monitor",
@@ -88,11 +88,11 @@ const AGENTS: Agent[] = [
     status: "active",
     capabilities: ["Progress monitoring", "Compliance gap analysis", "Transition planning", "Community integration reports", "Institutional to community tracking", "Subcabinet reporting"],
     metaSkillsDomains: ["M1", "M4"],
-    color: "#003865",
+    color: "hsl(var(--mn-blue))",
     messageCount: 195,
     successRate: 99.5,
     averageResponseTime: 20,
-    tags: ["olmstead", "compliance", "community-integration"]
+    tags: ["olmstead", "compliance", "community-integration"],
   },
   {
     id: "employment-first",
@@ -102,11 +102,11 @@ const AGENTS: Agent[] = [
     status: "active",
     capabilities: ["Employment outcome analysis", "VRS coordination", "Provider training", "Customized employment planning", "Disparity reporting", "Policy compliance review"],
     metaSkillsDomains: ["M1", "M3", "M4"],
-    color: "#1e6b3e",
+    color: "hsl(var(--chart-green))",
     messageCount: 167,
     successRate: 97.6,
     averageResponseTime: 24,
-    tags: ["employment-first", "vrs", "outcomes"]
+    tags: ["employment-first", "vrs", "outcomes"],
   },
   {
     id: "waiver-navigator",
@@ -116,11 +116,11 @@ const AGENTS: Agent[] = [
     status: "active",
     capabilities: ["Waiver comparison", "Eligibility guidance", "Service descriptions", "Plain language summaries", "CBSM navigation", "Person-centered planning support"],
     metaSkillsDomains: ["M2", "M4"],
-    color: "#003865",
+    color: "hsl(var(--mn-blue))",
     messageCount: 543,
     successRate: 98.9,
     averageResponseTime: 16,
-    tags: ["waiver", "navigation", "plain-language"]
+    tags: ["waiver", "navigation", "plain-language"],
   },
   {
     id: "hcbs-settings",
@@ -130,11 +130,11 @@ const AGENTS: Agent[] = [
     status: "active",
     capabilities: ["Settings review", "Compliance checklist", "Remediation planning", "Site assessment", "Provider guidance", "Institutional settings identification"],
     metaSkillsDomains: ["M4", "M5"],
-    color: "#5c3317",
+    color: "hsl(var(--chart-amber))",
     messageCount: 134,
     successRate: 99.1,
     averageResponseTime: 35,
-    tags: ["hcbs", "compliance", "settings-rule"]
+    tags: ["hcbs", "compliance", "settings-rule"],
   },
   {
     id: "stakeholder-engagement",
@@ -144,11 +144,11 @@ const AGENTS: Agent[] = [
     status: "active",
     capabilities: ["Meeting facilitation guides", "Advisory panel design", "Engagement strategy", "Action item tracking", "Community input synthesis", "Accessibility planning"],
     metaSkillsDomains: ["M5", "M6"],
-    color: "#1e6b3e",
+    color: "hsl(var(--chart-green))",
     messageCount: 201,
     successRate: 97.3,
     averageResponseTime: 27,
-    tags: ["engagement", "stakeholders", "advisory"]
+    tags: ["engagement", "stakeholders", "advisory"],
   },
   {
     id: "legislative-affairs",
@@ -158,11 +158,11 @@ const AGENTS: Agent[] = [
     status: "active",
     capabilities: ["Bill tracking", "Testimony drafting", "Comment letters", "Legislative impact analysis", "Session monitoring", "Budget request support"],
     metaSkillsDomains: ["M2", "M4"],
-    color: "#003865",
+    color: "hsl(var(--mn-blue))",
     messageCount: 88,
     successRate: 98.8,
     averageResponseTime: 33,
-    tags: ["legislative", "testimony", "policy"]
+    tags: ["legislative", "testimony", "policy"],
   },
   {
     id: "disability-hub",
@@ -172,11 +172,11 @@ const AGENTS: Agent[] = [
     status: "active",
     capabilities: ["Benefits navigation", "Resource guides", "Multilingual materials", "Community referrals", "Work incentives planning", "Hub coordination"],
     metaSkillsDomains: ["M2", "M6"],
-    color: "#1e6b3e",
+    color: "hsl(var(--chart-green))",
     messageCount: 312,
     successRate: 98.1,
     averageResponseTime: 19,
-    tags: ["disability-hub", "benefits", "navigation"]
+    tags: ["disability-hub", "benefits", "navigation"],
   },
   {
     id: "communications",
@@ -186,11 +186,11 @@ const AGENTS: Agent[] = [
     status: "active",
     capabilities: ["Press releases", "Web content", "Social media", "Executive memos", "Newsletters", "Infographic scripts", "FAQ documents"],
     metaSkillsDomains: ["M2", "M5"],
-    color: "#5c3317",
+    color: "hsl(var(--chart-rose))",
     messageCount: 447,
     successRate: 97.9,
     averageResponseTime: 21,
-    tags: ["communications", "content", "web"]
+    tags: ["communications", "content", "web"],
   },
   {
     id: "meta-audit",
@@ -200,12 +200,12 @@ const AGENTS: Agent[] = [
     status: "active",
     capabilities: ["L1 automated checks", "L2 equity review", "L3 expert validation", "Language audits", "Structural analysis review", "Output quality scoring"],
     metaSkillsDomains: ["M1", "M2", "M3", "M4", "M5", "M6"],
-    color: "#003865",
+    color: "hsl(var(--mn-blue))",
     messageCount: 1247,
     successRate: 99.8,
     averageResponseTime: 8,
-    tags: ["quality", "audit", "sniff-check"]
-  }
+    tags: ["quality", "audit", "sniff-check"],
+  },
 ];
 
 const categoryLabels: Record<string, string> = {
@@ -217,179 +217,320 @@ const categoryLabels: Record<string, string> = {
   communications: "Communications",
   compliance: "Compliance",
   employment: "Employment",
-  waiver: "Waiver"
+  waiver: "Waiver",
 };
 
 const categoryColors: Record<string, string> = {
-  policy: "bg-blue-100 text-blue-700",
-  data: "bg-green-100 text-green-700",
-  training: "bg-amber-100 text-amber-700",
-  community: "bg-purple-100 text-purple-700",
-  operations: "bg-gray-100 text-gray-700",
-  communications: "bg-pink-100 text-pink-700",
-  compliance: "bg-red-100 text-red-700",
-  employment: "bg-teal-100 text-teal-700",
-  waiver: "bg-indigo-100 text-indigo-700"
+  policy: "bg-[hsl(var(--mn-blue-soft))] text-[hsl(var(--mn-blue))]",
+  data: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300",
+  training: "bg-amber-500/12 text-amber-700 dark:text-amber-300",
+  community: "bg-fuchsia-500/12 text-fuchsia-700 dark:text-fuchsia-300",
+  operations: "bg-slate-500/12 text-slate-700 dark:text-slate-300",
+  communications: "bg-rose-500/12 text-rose-700 dark:text-rose-300",
+  compliance: "bg-red-500/12 text-red-700 dark:text-red-300",
+  employment: "bg-teal-500/12 text-teal-700 dark:text-teal-300",
+  waiver: "bg-indigo-500/12 text-indigo-700 dark:text-indigo-300",
 };
+
+const scorePresets = [
+  { id: "all", label: "All agents" },
+  { id: "elite", label: "98.5%+ success" },
+  { id: "fast", label: "Under 20s response" },
+];
 
 export default function AgentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [scoreFilter, setScoreFilter] = useState("all");
+  const [sortBy, setSortBy] = useState<"usage" | "success" | "response">("usage");
+  const [compareList, setCompareList] = useState<string[]>([]);
 
-  const filteredAgents = AGENTS.filter(agent => {
-    const matchesSearch = !searchQuery ||
-      agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      agent.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      agent.tags?.some(tag => tag.includes(searchQuery.toLowerCase()));
+  const filteredAgents = useMemo(() => {
+    const bySearch = AGENTS.filter((agent) => {
+      const matchesSearch =
+        !searchQuery ||
+        agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        agent.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        agent.tags?.some((tag) => tag.includes(searchQuery.toLowerCase()));
 
-    const matchesCategory = categoryFilter === "all" || agent.category === categoryFilter;
+      const matchesCategory = categoryFilter === "all" || agent.category === categoryFilter;
+      const matchesScore =
+        scoreFilter === "all" ||
+        (scoreFilter === "elite" && (agent.successRate ?? 0) >= 98.5) ||
+        (scoreFilter === "fast" && (agent.averageResponseTime ?? 999) < 20);
 
-    return matchesSearch && matchesCategory;
-  });
+      return matchesSearch && matchesCategory && matchesScore;
+    });
 
-  const totalMessages = AGENTS.reduce((sum, a) => sum + (a.messageCount || 0), 0);
-  const avgSuccessRate = AGENTS.reduce((sum, a) => sum + (a.successRate || 0), 0) / AGENTS.length;
+    return [...bySearch].sort((a, b) => {
+      if (sortBy === "success") return (b.successRate ?? 0) - (a.successRate ?? 0);
+      if (sortBy === "response") return (a.averageResponseTime ?? 0) - (b.averageResponseTime ?? 0);
+      return (b.messageCount ?? 0) - (a.messageCount ?? 0);
+    });
+  }, [categoryFilter, scoreFilter, searchQuery, sortBy]);
+
+  const totalMessages = AGENTS.reduce((sum, agent) => sum + (agent.messageCount || 0), 0);
+  const avgSuccessRate = AGENTS.reduce((sum, agent) => sum + (agent.successRate || 0), 0) / AGENTS.length;
+  const fastestAverage = Math.min(...AGENTS.map((agent) => agent.averageResponseTime || 999));
+  const compareAgents = AGENTS.filter((agent) => compareList.includes(agent.id));
+
+  const toggleCompare = (id: string) => {
+    setCompareList((current) => {
+      if (current.includes(id)) return current.filter((value) => value !== id);
+      if (current.length >= 3) return [...current.slice(1), id];
+      return [...current, id];
+    });
+  };
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">
-          <EditableText id="agents.title" defaultValue="Equity Agents" />
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          <EditableText id="agents.subtitle" defaultValue={`${AGENTS.length} specialized agents · All governed by Primary Directive · 39 Meta-Skills applied universally`} />
-        </p>
-      </div>
+    <div className="mx-auto max-w-7xl space-y-6 px-4 py-5 md:px-6 md:py-6">
+      <section className="hero-panel rounded-[28px] border border-border/70 p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)] md:p-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[hsl(var(--mn-blue))] dark:border-white/10 dark:bg-white/5 dark:text-white">
+              <Sparkles className="h-3.5 w-3.5" />
+              Equity agents
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold text-foreground md:text-[1.65rem]">
+                <EditableText id="agents.title" defaultValue="Equity Agents" />
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground md:text-[15px]">
+                <EditableText id="agents.subtitle" defaultValue={`${AGENTS.length} specialized agents · All governed by the Primary Directive · Client-side triage and comparison now active`} />
+              </p>
+            </div>
+          </div>
+
+          <div className="grid w-full max-w-xl grid-cols-2 gap-3 lg:grid-cols-4">
+            {[
+              { label: "Active agents", value: AGENTS.length, icon: Zap },
+              { label: "Tasks completed", value: totalMessages.toLocaleString(), icon: ArrowUpRight },
+              { label: "Avg pass rate", value: `${avgSuccessRate.toFixed(1)}%`, icon: ShieldCheck },
+              { label: "Fastest average", value: `${fastestAverage}s`, icon: TimerReset },
+            ].map((metric) => (
+              <div key={metric.label} className="rounded-2xl border border-white/55 bg-white/72 p-4 shadow-[0_14px_40px_rgba(15,23,42,0.06)] backdrop-blur dark:border-white/10 dark:bg-white/5">
+                <div className="flex items-center justify-between gap-3 text-muted-foreground">
+                  <span className="text-[11px] uppercase tracking-[0.16em]">{metric.label}</span>
+                  <metric.icon className="h-4 w-4" />
+                </div>
+                <div className="mt-3 text-2xl font-semibold tracking-tight tabular-nums text-foreground">{metric.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <PageToolbar title="Agents" />
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-[#003865]">{AGENTS.length}</div>
-            <div className="text-sm text-muted-foreground">Active Agents</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-[#78BE21]">{totalMessages.toLocaleString()}</div>
-            <div className="text-sm text-muted-foreground">Total Tasks Completed</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-[#003865]">{avgSuccessRate.toFixed(1)}%</div>
-            <div className="text-sm text-muted-foreground">Avg Sniff Check Pass</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-[#003865]">39</div>
-            <div className="text-sm text-muted-foreground">Meta-Skills Applied</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Input
-            placeholder="Search agents..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {Object.entries(categoryLabels).map(([value, label]) => (
-              <SelectItem key={value} value={value}>{label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Agents grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {filteredAgents.map(agent => (
-          <Card key={agent.id} className="hover:shadow-md transition-shadow group">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-lg flex-shrink-0"
-                    style={{ backgroundColor: `${agent.color}15` }}
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-4">
+          <Card className="panel-card">
+            <CardHeader className="gap-4">
+              <div>
+                <CardTitle className="text-base">Find the right agent quickly</CardTitle>
+                <CardDescription>Search, filter, sort, and compare agents without leaving the page.</CardDescription>
+              </div>
+              <div className="grid gap-3 md:grid-cols-[minmax(0,1.4fr)_180px_180px_160px]">
+                <label className="header-search md:min-w-0">
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search agents, capabilities, or tags"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
+                    data-testid="input-agent-search"
                   />
-                  <div>
-                    <CardTitle className="text-sm font-semibold leading-tight">
-                      <EditableText id={`agent.${agent.id}.name`} defaultValue={agent.name} />
-                    </CardTitle>
-                    <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${categoryColors[agent.category]}`}>
-                      {categoryLabels[agent.category]}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <div className="w-2 h-2 rounded-full bg-green-400"></div>
-                  <span className="text-xs text-muted-foreground">Active</span>
-                </div>
+                </label>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="rounded-xl" data-testid="select-agent-category">
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All categories</SelectItem>
+                    {Object.entries(categoryLabels).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={scoreFilter} onValueChange={setScoreFilter}>
+                  <SelectTrigger className="rounded-xl" data-testid="select-agent-score-filter">
+                    <SelectValue placeholder="Score filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {scorePresets.map((preset) => (
+                      <SelectItem key={preset.id} value={preset.id}>
+                        {preset.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={sortBy} onValueChange={(value: "usage" | "success" | "response") => setSortBy(value)}>
+                  <SelectTrigger className="rounded-xl" data-testid="select-agent-sort">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="usage">Most used</SelectItem>
+                    <SelectItem value="success">Best pass rate</SelectItem>
+                    <SelectItem value="response">Fastest response</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardHeader>
+          </Card>
 
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {filteredAgents.map((agent) => {
+              const isCompared = compareList.includes(agent.id);
+              return (
+                <Card key={agent.id} className={isCompared ? "panel-card border-[hsl(var(--mn-blue))] shadow-[0_20px_48px_rgba(0,56,101,0.12)]" : "panel-card"} data-testid={`card-agent-${agent.id}`}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/60 bg-muted/40" style={{ boxShadow: `inset 0 0 0 1px ${agent.color}20` }}>
+                          <div className="h-5 w-5 rounded-full" style={{ backgroundColor: agent.color }} />
+                        </div>
+                        <div>
+                          <CardTitle className="text-sm font-semibold leading-6">
+                            <EditableText id={`agent.${agent.id}.name`} defaultValue={agent.name} />
+                          </CardTitle>
+                          <div className="mt-1 flex flex-wrap items-center gap-2">
+                            <span className={`rounded-full px-2 py-1 text-[11px] font-medium ${categoryColors[agent.category]}`}>{categoryLabels[agent.category]}</span>
+                            <span className="rounded-full bg-emerald-500/12 px-2 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">Active</span>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => toggleCompare(agent.id)}
+                        className={isCompared ? "chip-button chip-button-active" : "chip-button"}
+                        data-testid={`button-compare-${agent.id}`}
+                      >
+                        <SlidersHorizontal className="h-3.5 w-3.5" />
+                        {isCompared ? "Added" : "Compare"}
+                      </button>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="space-y-4">
+                    <EditableText id={`agent.${agent.id}.desc`} defaultValue={agent.description} multiline className="text-sm leading-6 text-muted-foreground line-clamp-4" />
+
+                    <div className="flex flex-wrap gap-2">
+                      {agent.capabilities.slice(0, 4).map((capability) => (
+                        <span key={capability} className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
+                          {capability}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 rounded-2xl border border-border/60 bg-muted/20 p-3 text-center">
+                      <div>
+                        <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Tasks</div>
+                        <div className="mt-1 text-sm font-semibold tabular-nums">{agent.messageCount?.toLocaleString()}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Pass</div>
+                        <div className="mt-1 text-sm font-semibold tabular-nums">{agent.successRate}%</div>
+                      </div>
+                      <div>
+                        <div className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Avg</div>
+                        <div className="mt-1 text-sm font-semibold tabular-nums">{agent.averageResponseTime}s</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span>Meta-skills:</span>
+                      {agent.metaSkillsDomains.map((domain) => (
+                        <span key={domain} className="rounded-full bg-[hsl(var(--mn-blue-soft))] px-2 py-1 font-medium text-[hsl(var(--mn-blue))]">
+                          {domain}
+                        </span>
+                      ))}
+                    </div>
+
+                    <Link to={`/agents/${agent.id}`} className="block" data-testid={`link-open-agent-${agent.id}`}>
+                      <Button className="w-full rounded-xl bg-[hsl(var(--mn-blue))] text-white hover:bg-[hsl(var(--mn-blue-deep))]" size="sm">
+                        Open agent
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {filteredAgents.length === 0 && (
+            <div className="rounded-3xl border border-dashed border-border bg-muted/20 px-6 py-16 text-center text-muted-foreground" data-testid="empty-agents-results">
+              <p className="text-lg font-medium text-foreground">No agents match this view</p>
+              <p className="mt-2 text-sm">Try a broader search, or reset one of the active filters.</p>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-4">
+          <Card className="panel-card">
+            <CardHeader>
+              <CardTitle className="text-base">Compare shortlist</CardTitle>
+              <CardDescription>Select up to three agents to compare usage, quality, and speed side by side.</CardDescription>
+            </CardHeader>
             <CardContent className="space-y-3">
-              <EditableText id={`agent.${agent.id}.desc`} defaultValue={agent.description} multiline className="text-sm text-muted-foreground leading-relaxed line-clamp-3" />
-
-              {/* Capabilities */}
-              <div className="flex flex-wrap gap-1">
-                {agent.capabilities.slice(0, 4).map((cap, i) => (
-                  <span key={i} className="text-xs bg-muted px-2 py-0.5 rounded text-muted-foreground">
-                    {cap}
-                  </span>
-                ))}
-                {agent.capabilities.length > 4 && (
-                  <span className="text-xs text-muted-foreground px-1">
-                    +{agent.capabilities.length - 4} more
-                  </span>
-                )}
-              </div>
-
-              {/* Meta-skills domains */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-muted-foreground">Meta-Skills:</span>
-                {agent.metaSkillsDomains.map(domain => (
-                  <span key={domain} className="text-xs bg-[#003865]/10 text-[#003865] px-1.5 py-0.5 rounded font-medium">
-                    {domain}
-                  </span>
-                ))}
-              </div>
-
-              {/* Stats */}
-              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                <span>{agent.messageCount?.toLocaleString()} tasks</span>
-                <span>{agent.successRate}%</span>
-                <span>~{agent.averageResponseTime}s</span>
-              </div>
-
-              <Link to={`/agents/${agent.id}`} className="block">
-                <Button className="w-full" size="sm">
-                  Open Agent
-                </Button>
-              </Link>
+              {compareAgents.length > 0 ? (
+                compareAgents.map((agent) => (
+                  <div key={agent.id} className="rounded-2xl border border-border/60 bg-card p-4" data-testid={`compare-agent-${agent.id}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-semibold text-foreground">{agent.name}</div>
+                        <div className="mt-1 text-xs text-muted-foreground">{categoryLabels[agent.category]}</div>
+                      </div>
+                      <button type="button" onClick={() => toggleCompare(agent.id)} className="text-xs font-medium text-[hsl(var(--mn-blue))] hover:underline" data-testid={`button-remove-compare-${agent.id}`}>
+                        Remove
+                      </button>
+                    </div>
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                      <div className="rounded-xl bg-muted/30 px-2 py-2">
+                        <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Tasks</div>
+                        <div className="mt-1 text-sm font-semibold tabular-nums">{agent.messageCount}</div>
+                      </div>
+                      <div className="rounded-xl bg-muted/30 px-2 py-2">
+                        <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Pass</div>
+                        <div className="mt-1 text-sm font-semibold tabular-nums">{agent.successRate}%</div>
+                      </div>
+                      <div className="rounded-xl bg-muted/30 px-2 py-2">
+                        <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">Avg</div>
+                        <div className="mt-1 text-sm font-semibold tabular-nums">{agent.averageResponseTime}s</div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground" data-testid="empty-agent-compare">
+                  Use the Compare button on any agent card to build a shortlist here.
+                </div>
+              )}
             </CardContent>
           </Card>
-        ))}
-      </div>
 
-      {filteredAgents.length === 0 && (
-        <div className="text-center py-16 text-muted-foreground">
-          <p className="text-lg font-medium">No agents found</p>
-          <p className="text-sm mt-1">Try adjusting your search or filter</p>
+          <Card className="panel-card">
+            <CardHeader>
+              <CardTitle className="text-base">Live roster signals</CardTitle>
+              <CardDescription>Instantly useful filters now shape the visible roster instead of just styling the page.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {scorePresets.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => setScoreFilter(preset.id)}
+                  className={scoreFilter === preset.id ? "chip-button chip-button-active w-full justify-center" : "chip-button w-full justify-center"}
+                  data-testid={`button-score-preset-${preset.id}`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </CardContent>
+          </Card>
         </div>
-      )}
+      </section>
     </div>
   );
 }
