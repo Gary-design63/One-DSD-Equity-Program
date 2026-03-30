@@ -14,12 +14,6 @@ export interface FileInfo {
   createdAt: string;
 }
 
-async function getAuthToken(): Promise<string | null> {
-  if (!isSupabaseAvailable() || !supabase) return null;
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token || null;
-}
-
 export async function uploadFile(
   file: File,
   path: string
@@ -28,23 +22,46 @@ export async function uploadFile(
     throw new Error("Storage service unavailable");
   }
 
-  const { data, error } = await supabase.functions.invoke("blob-storage", {
-    body: await file.arrayBuffer(),
-    headers: {
-      "Content-Type": file.type,
-      "Content-Length": String(file.size),
-    },
-    // Pass action and path as query params via the function URL
-    method: "POST",
-  });
-
-  // Fallback: use direct Supabase Storage if Edge Function is not deployed
-  if (error) {
-    console.warn("Edge Function unavailable, falling back to direct Supabase Storage");
+  // The blob-storage Edge Function reads action/path from query params.
+  // supabase.functions.invoke doesn't support query params, so we build
+  // the URL manually using the Supabase project URL.
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  if (!supabaseUrl) {
     return uploadFileDirect(file, path);
   }
 
-  return data as UploadResult;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      throw new Error("Not authenticated");
+    }
+
+    const fnUrl = new URL(`${supabaseUrl}/functions/v1/blob-storage`);
+    fnUrl.searchParams.set("action", "upload");
+    fnUrl.searchParams.set("path", path);
+    fnUrl.searchParams.set("type", file.type);
+
+    const response = await fetch(fnUrl.toString(), {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${session.access_token}`,
+        "Content-Type": file.type,
+        "Content-Length": String(file.size),
+        "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY || "",
+      },
+      body: await file.arrayBuffer(),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.status}`);
+    }
+
+    return await response.json() as UploadResult;
+  } catch (err) {
+    // Fallback: use direct Supabase Storage if Edge Function is not deployed
+    console.warn("Edge Function unavailable, falling back to direct Supabase Storage:", err);
+    return uploadFileDirect(file, path);
+  }
 }
 
 // Direct Supabase Storage upload (fallback when Edge Functions are not deployed)

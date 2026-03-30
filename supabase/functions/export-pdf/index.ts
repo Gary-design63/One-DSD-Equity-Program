@@ -14,17 +14,34 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Configurable CORS: set ALLOWED_ORIGINS as comma-separated list in Edge Function secrets.
+const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") || "")
+  .split(",")
+  .map(o => o.trim())
+  .filter(Boolean);
 
-function errorResponse(status: number, message: string) {
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("origin") || "";
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, accept",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    headers["Access-Control-Allow-Origin"] = origin;
+    headers["Vary"] = "Origin";
+  }
+  return headers;
+}
+
+function errorResponse(status: number, message: string, cors: Record<string, string>) {
   return new Response(
     JSON.stringify({ error: message }),
-    { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    { status, headers: { ...cors, "Content-Type": "application/json" } }
   );
 }
+
+// Allowed email domains for export operations
+const ALLOWED_EMAIL_DOMAINS = ["state.mn.us", "mn.gov"];
 
 async function authenticateRequest(req: Request): Promise<{ userId: string; email: string } | null> {
   const authHeader = req.headers.get("authorization");
@@ -35,7 +52,16 @@ async function authenticateRequest(req: Request): Promise<{ userId: string; emai
   const { data: { user }, error } = await supabase.auth.getUser(token);
 
   if (error || !user) return null;
-  return { userId: user.id, email: user.email || "" };
+
+  // Enforce email domain — only allowed organization domains can export
+  const email = user.email || "";
+  const domain = email.split("@")[1]?.toLowerCase();
+  if (!domain || !ALLOWED_EMAIL_DOMAINS.some(d => domain === d || domain.endsWith(`.${d}`))) {
+    console.warn(`Export access denied for email domain: ${domain}`);
+    return null;
+  }
+
+  return { userId: user.id, email };
 }
 
 interface ReportData {
@@ -228,18 +254,20 @@ function generateReportHtml(data: ReportData): string {
 }
 
 serve(async (req) => {
+  const cors = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: cors });
   }
 
   if (req.method !== "POST") {
-    return errorResponse(405, "POST method required");
+    return errorResponse(405, "POST method required", cors);
   }
 
   // Authenticate
   const authUser = await authenticateRequest(req);
   if (!authUser) {
-    return errorResponse(401, "Authentication required");
+    return errorResponse(401, "Authentication required", cors);
   }
 
   try {
@@ -247,12 +275,12 @@ serve(async (req) => {
 
     // Validate report data
     if (!reportData.type || !reportData.title || !reportData.sections) {
-      return errorResponse(400, "Report must include type, title, and sections");
+      return errorResponse(400, "Report must include type, title, and sections", cors);
     }
 
     const validTypes = ["equity-report", "policy-document", "metrics-snapshot", "workflow-summary"];
     if (!validTypes.includes(reportData.type)) {
-      return errorResponse(400, `Invalid report type. Must be one of: ${validTypes.join(", ")}`);
+      return errorResponse(400, `Invalid report type. Must be one of: ${validTypes.join(", ")}`, cors);
     }
 
     // Set metadata defaults
@@ -271,10 +299,9 @@ serve(async (req) => {
     const accept = req.headers.get("accept") || "";
 
     if (accept.includes("text/html")) {
-      // Return HTML directly (client can print-to-PDF or render)
       return new Response(html, {
         headers: {
-          ...corsHeaders,
+          ...cors,
           "Content-Type": "text/html; charset=utf-8",
           "Content-Disposition": `inline; filename="${reportData.title.replace(/[^a-zA-Z0-9-_ ]/g, "")}.html"`,
         },
@@ -287,7 +314,7 @@ serve(async (req) => {
     // with @page CSS and can be converted to PDF via browser print or an external service.
     return new Response(html, {
       headers: {
-        ...corsHeaders,
+        ...cors,
         "Content-Type": "text/html; charset=utf-8",
         "Content-Disposition": `attachment; filename="${reportData.title.replace(/[^a-zA-Z0-9-_ ]/g, "")}.html"`,
         "X-PDF-Note": "Print this HTML to PDF using browser print (Ctrl+P) for best results. " +
@@ -296,6 +323,6 @@ serve(async (req) => {
     });
   } catch (err) {
     console.error("PDF export error:", err);
-    return errorResponse(500, err instanceof Error ? err.message : "Export failed");
+    return errorResponse(500, err instanceof Error ? err.message : "Export failed", cors);
   }
 });

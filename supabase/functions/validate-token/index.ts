@@ -16,6 +16,27 @@ const AZURE_TENANT_ID = Deno.env.get("AZURE_TENANT_ID") || "";
 const AZURE_CLIENT_ID = Deno.env.get("AZURE_CLIENT_ID") || "";
 const ALLOWED_DOMAINS = ["state.mn.us", "mn.gov"];
 
+// Configurable CORS: set ALLOWED_ORIGINS as comma-separated list in Edge Function secrets.
+// e.g. "https://your-app.example.com,https://staging.example.com"
+// If not set, no cross-origin requests are allowed (no wildcard fallback).
+const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") || "")
+  .split(",")
+  .map(o => o.trim())
+  .filter(Boolean);
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("origin") || "";
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    headers["Access-Control-Allow-Origin"] = origin;
+    headers["Vary"] = "Origin";
+  }
+  return headers;
+}
+
 // JWKS cache to avoid fetching on every request
 let jwksCache: { keys: JsonWebKey[]; fetchedAt: number } | null = null;
 const JWKS_CACHE_TTL_MS = 3600_000; // 1 hour
@@ -44,10 +65,8 @@ interface TokenPayload {
   roles?: string[];
 }
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Clock skew tolerance for JWT expiration checks (5 minutes)
+const CLOCK_SKEW_SECONDS = 300;
 
 async function getAzureJWKS(): Promise<JWKSResponse> {
   if (jwksCache && Date.now() - jwksCache.fetchedAt < JWKS_CACHE_TTL_MS) {
@@ -124,9 +143,9 @@ async function verifyTokenSignature(token: string, jwks: JWKSResponse): Promise<
 }
 
 function validateClaims(payload: TokenPayload): { valid: boolean; reason?: string } {
-  // Check expiration
+  // Check expiration (with clock skew tolerance)
   const now = Math.floor(Date.now() / 1000);
-  if (payload.exp < now) {
+  if (payload.exp < now - CLOCK_SKEW_SECONDS) {
     return { valid: false, reason: "Token expired" };
   }
 
@@ -158,9 +177,11 @@ function validateClaims(payload: TokenPayload): { valid: boolean; reason?: strin
 }
 
 serve(async (req) => {
+  const cors = getCorsHeaders(req);
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: cors });
   }
 
   try {
@@ -169,20 +190,21 @@ serve(async (req) => {
     if (!token || typeof token !== "string") {
       return new Response(
         JSON.stringify({ valid: false, error: "Token is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
-    // If Azure AD is not configured, fall back to Supabase JWT validation only
+    // If Azure AD is not configured, fall back to Supabase JWT validation only.
+    // The client sends the Supabase session access_token which is a Supabase JWT,
+    // and we validate it via supabase.auth.getUser().
     if (!AZURE_TENANT_ID && !AZURE_CLIENT_ID) {
-      // Validate using Supabase's built-in auth
       const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
       const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
       if (!supabaseUrl || !supabaseServiceKey) {
         return new Response(
           JSON.stringify({ valid: false, error: "Server configuration incomplete" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
         );
       }
 
@@ -192,7 +214,7 @@ serve(async (req) => {
       if (error || !user) {
         return new Response(
           JSON.stringify({ valid: false, error: error?.message || "Invalid token" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 401, headers: { ...cors, "Content-Type": "application/json" } }
         );
       }
 
@@ -205,18 +227,23 @@ serve(async (req) => {
             name: user.user_metadata?.full_name || user.email,
           },
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
-    // Full Azure AD JWT validation
+    // Full Azure AD JWT validation.
+    // When Azure is configured, the client should extract the Azure provider token
+    // from the Supabase session (session.provider_token) and send that here,
+    // since session.access_token is a Supabase JWT, not an Azure AD JWT.
+    //
+    // The AuthContext sends session.provider_token when available (see AuthContext.tsx).
     const jwks = await getAzureJWKS();
     const signatureValid = await verifyTokenSignature(token, jwks);
 
     if (!signatureValid) {
       return new Response(
         JSON.stringify({ valid: false, error: "Invalid token signature" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 401, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -226,7 +253,7 @@ serve(async (req) => {
     if (!claimsResult.valid) {
       return new Response(
         JSON.stringify({ valid: false, error: claimsResult.reason }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 401, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }
 
@@ -241,13 +268,13 @@ serve(async (req) => {
           tenantId: payload.tid,
         },
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...cors, "Content-Type": "application/json" } }
     );
   } catch (err) {
     console.error("Token validation error:", err);
     return new Response(
       JSON.stringify({ valid: false, error: "Token validation failed" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
     );
   }
 });

@@ -6,14 +6,21 @@
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 
-const AZURE_STORAGE_ACCOUNT = Deno.env.get("AZURE_STORAGE_ACCOUNT") || "";
-const AZURE_STORAGE_KEY = Deno.env.get("AZURE_STORAGE_KEY") || "";
-const AZURE_STORAGE_CONTAINER = Deno.env.get("AZURE_STORAGE_CONTAINER") || "one-dsd-files";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
-// If Azure Blob Storage is not configured, fall back to Supabase Storage
-const USE_SUPABASE_STORAGE = !AZURE_STORAGE_ACCOUNT || !AZURE_STORAGE_KEY;
+// Azure Blob Storage is DISABLED. All operations use Supabase Storage.
+// The Azure Blob code path is retained but gated behind a flag that requires
+// both AZURE_STORAGE_ACCOUNT and AZURE_STORAGE_KEY to be set AND proper
+// Azure SDK request signing to be implemented (the current simplified auth
+// will 403 on Azure). See README or .env.example for details.
+const AZURE_STORAGE_ACCOUNT = Deno.env.get("AZURE_STORAGE_ACCOUNT") || "";
+const AZURE_STORAGE_KEY = Deno.env.get("AZURE_STORAGE_KEY") || "";
+const AZURE_STORAGE_CONTAINER = Deno.env.get("AZURE_STORAGE_CONTAINER") || "one-dsd-files";
+
+// Always use Supabase Storage: Azure Blob requires proper SharedKey/SAS signing
+// which is not yet implemented. Force Supabase Storage as the only working backend.
+const USE_SUPABASE_STORAGE = true;
 
 const SUPABASE_STORAGE_BUCKET = "one-dsd-files";
 
@@ -34,17 +41,34 @@ const ALLOWED_TYPES = [
   "image/webp",
 ];
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Configurable CORS: set ALLOWED_ORIGINS as comma-separated list in Edge Function secrets.
+const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") || "")
+  .split(",")
+  .map(o => o.trim())
+  .filter(Boolean);
 
-function errorResponse(status: number, message: string) {
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get("origin") || "";
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, DELETE, OPTIONS",
+  };
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    headers["Access-Control-Allow-Origin"] = origin;
+    headers["Vary"] = "Origin";
+  }
+  return headers;
+}
+
+function errorResponse(status: number, message: string, cors: Record<string, string>) {
   return new Response(
     JSON.stringify({ error: message }),
-    { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    { status, headers: { ...cors, "Content-Type": "application/json" } }
   );
 }
+
+// Allowed email domains for storage operations
+const ALLOWED_EMAIL_DOMAINS = ["state.mn.us", "mn.gov"];
 
 async function authenticateRequest(req: Request): Promise<{ userId: string; email: string } | null> {
   const authHeader = req.headers.get("authorization");
@@ -55,7 +79,16 @@ async function authenticateRequest(req: Request): Promise<{ userId: string; emai
   const { data: { user }, error } = await supabase.auth.getUser(token);
 
   if (error || !user) return null;
-  return { userId: user.id, email: user.email || "" };
+
+  // Enforce email domain — only allowed organization domains can access storage
+  const email = user.email || "";
+  const domain = email.split("@")[1]?.toLowerCase();
+  if (!domain || !ALLOWED_EMAIL_DOMAINS.some(d => domain === d || domain.endsWith(`.${d}`))) {
+    console.warn(`Storage access denied for email domain: ${domain}`);
+    return null;
+  }
+
+  return { userId: user.id, email };
 }
 
 // --- Azure Blob Storage operations ---
@@ -170,14 +203,16 @@ async function listFromSupabase(prefix: string, userId: string): Promise<Array<{
 // --- Request handler ---
 
 serve(async (req) => {
+  const cors = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: cors });
   }
 
   // Authenticate
   const authUser = await authenticateRequest(req);
   if (!authUser) {
-    return errorResponse(401, "Authentication required");
+    return errorResponse(401, "Authentication required", cors);
   }
 
   const url = new URL(req.url);
@@ -186,121 +221,70 @@ serve(async (req) => {
   try {
     switch (action) {
       case "upload": {
-        if (req.method !== "POST") return errorResponse(405, "POST required for upload");
+        if (req.method !== "POST") return errorResponse(405, "POST required for upload", cors);
 
         const contentType = req.headers.get("content-type") || "";
         const contentLength = parseInt(req.headers.get("content-length") || "0", 10);
         const filePath = url.searchParams.get("path");
 
-        if (!filePath) return errorResponse(400, "File path is required");
-        if (contentLength > MAX_FILE_SIZE) return errorResponse(413, "File too large (max 50MB)");
+        if (!filePath) return errorResponse(400, "File path is required", cors);
+        if (contentLength > MAX_FILE_SIZE) return errorResponse(413, "File too large (max 50MB)", cors);
 
         // Validate MIME type from the actual content type or the query param
         const mimeType = url.searchParams.get("type") || contentType.split(";")[0];
         if (mimeType && !ALLOWED_TYPES.includes(mimeType)) {
-          return errorResponse(415, `File type not allowed: ${mimeType}`);
+          return errorResponse(415, `File type not allowed: ${mimeType}`, cors);
         }
 
         const body = new Uint8Array(await req.arrayBuffer());
 
-        if (USE_SUPABASE_STORAGE) {
-          const result = await uploadToSupabase(filePath, body, mimeType, authUser.userId);
-          return new Response(JSON.stringify(result), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-
-        // Azure Blob Storage upload
-        const azureResp = await azureRequest("PUT", filePath, body, mimeType);
-        if (!azureResp.ok) {
-          return errorResponse(500, `Azure upload failed: ${azureResp.status}`);
-        }
-
-        return new Response(
-          JSON.stringify({
-            url: `https://${AZURE_STORAGE_ACCOUNT}.blob.core.windows.net/${AZURE_STORAGE_CONTAINER}/${filePath}`,
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        // Always uses Supabase Storage (Azure Blob is disabled)
+        const result = await uploadToSupabase(filePath, body, mimeType, authUser.userId);
+        return new Response(JSON.stringify(result), {
+          headers: { ...cors, "Content-Type": "application/json" },
+        });
       }
 
       case "download": {
         const filePath = url.searchParams.get("path");
-        if (!filePath) return errorResponse(400, "File path is required");
+        if (!filePath) return errorResponse(400, "File path is required", cors);
 
-        if (USE_SUPABASE_STORAGE) {
-          const { data, contentType } = await downloadFromSupabase(filePath, authUser.userId);
-          return new Response(data, {
-            headers: {
-              ...corsHeaders,
-              "Content-Type": contentType,
-              "Content-Disposition": `attachment; filename="${filePath.split("/").pop()}"`,
-            },
-          });
-        }
-
-        // Azure Blob Storage download
-        const azureResp = await azureRequest("GET", filePath);
-        if (!azureResp.ok) {
-          return errorResponse(404, "File not found");
-        }
-
-        const blobData = new Uint8Array(await azureResp.arrayBuffer());
-        return new Response(blobData, {
+        const { data, contentType } = await downloadFromSupabase(filePath, authUser.userId);
+        return new Response(data, {
           headers: {
-            ...corsHeaders,
-            "Content-Type": azureResp.headers.get("content-type") || "application/octet-stream",
+            ...cors,
+            "Content-Type": contentType,
             "Content-Disposition": `attachment; filename="${filePath.split("/").pop()}"`,
           },
         });
       }
 
       case "delete": {
-        if (req.method !== "DELETE") return errorResponse(405, "DELETE method required");
+        if (req.method !== "DELETE") return errorResponse(405, "DELETE method required", cors);
 
         const filePath = url.searchParams.get("path");
-        if (!filePath) return errorResponse(400, "File path is required");
+        if (!filePath) return errorResponse(400, "File path is required", cors);
 
-        if (USE_SUPABASE_STORAGE) {
-          await deleteFromSupabase(filePath, authUser.userId);
-          return new Response(JSON.stringify({ deleted: true }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-
-        const azureResp = await azureRequest("DELETE", filePath);
-        if (!azureResp.ok && azureResp.status !== 404) {
-          return errorResponse(500, `Azure delete failed: ${azureResp.status}`);
-        }
-
+        await deleteFromSupabase(filePath, authUser.userId);
         return new Response(JSON.stringify({ deleted: true }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...cors, "Content-Type": "application/json" },
         });
       }
 
       case "list": {
         const prefix = url.searchParams.get("prefix") || "";
 
-        if (USE_SUPABASE_STORAGE) {
-          const files = await listFromSupabase(prefix, authUser.userId);
-          return new Response(JSON.stringify({ files }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-
-        // For Azure, list is more complex (requires XML parsing of container response)
-        // Simplified: return a message indicating Azure list requires additional setup
-        return new Response(
-          JSON.stringify({ files: [], message: "Azure Blob list not yet implemented — use Supabase Storage" }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        const files = await listFromSupabase(prefix, authUser.userId);
+        return new Response(JSON.stringify({ files }), {
+          headers: { ...cors, "Content-Type": "application/json" },
+        });
       }
 
       default:
-        return errorResponse(400, "Invalid action. Use: upload, download, delete, list");
+        return errorResponse(400, "Invalid action. Use: upload, download, delete, list", cors);
     }
   } catch (err) {
     console.error("Blob storage error:", err);
-    return errorResponse(500, err instanceof Error ? err.message : "Internal server error");
+    return errorResponse(500, err instanceof Error ? err.message : "Internal server error", cors);
   }
 });

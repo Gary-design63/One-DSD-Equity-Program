@@ -36,28 +36,43 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// Admin emails - matches existing auth.js config
-const ADMIN_EMAILS = [
-  "gary.bellows@state.mn.us",
-  "garybellows@outlook.com",
-  "garybellows@hotmail.com",
-];
+// Role resolution from email. In production, roles should be resolved server-side
+// from Azure AD group claims or a roles table. This client-side mapping is a
+// temporary default until server-side role assignment is implemented.
+//
+// Admin emails should be configured in a Supabase roles table or Azure AD groups,
+// not hard-coded here. This placeholder list will be empty by default.
+const ADMIN_EMAILS: string[] = [];
 
-function resolveRole(email: string): UserRole {
-  if (ADMIN_EMAILS.some(a => a.toLowerCase() === email.toLowerCase())) {
+function resolveRole(email: string, serverRoles?: string[]): UserRole {
+  // Prefer server-provided roles (from validate-token Edge Function)
+  if (serverRoles?.includes("equity-consultant")) return "equity-consultant";
+  if (serverRoles?.includes("leadership-reviewer")) return "leadership-reviewer";
+  if (serverRoles?.includes("program-manager")) return "program-manager";
+  if (serverRoles?.includes("data-steward")) return "data-steward";
+
+  if (ADMIN_EMAILS.length > 0 && ADMIN_EMAILS.some(a => a.toLowerCase() === email.toLowerCase())) {
     return "equity-consultant";
   }
   // Default role for authenticated state users
-  if (email.endsWith("@state.mn.us")) {
+  if (email.endsWith("@state.mn.us") || email.endsWith("@mn.gov")) {
     return "program-manager";
   }
   return "staff";
 }
 
-function isLocalDev(): boolean {
+/**
+ * Dev-mode bypass requires BOTH conditions:
+ * 1. Running on localhost/127.0.0.1
+ * 2. VITE_DEV_ADMIN env var is explicitly set to "true"
+ *
+ * This prevents accidental admin bypass on any deployed environment.
+ */
+function isDevAdminBypass(): boolean {
   return (
     typeof window !== "undefined" &&
-    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") &&
+    import.meta.env.VITE_DEV_ADMIN === "true"
   );
 }
 
@@ -66,7 +81,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Validate token server-side via Supabase Edge Function
+  // Validate token server-side via Supabase Edge Function.
+  // When Azure AD is configured, sends the provider_token (Azure AD JWT).
+  // When Azure AD is not configured, sends the Supabase access_token.
   const validateToken = useCallback(async (): Promise<boolean> => {
     if (!isSupabaseAvailable() || !supabase) return false;
 
@@ -74,8 +91,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) return false;
 
+      // Use the Azure AD provider token if available (for Azure AD JWT validation),
+      // otherwise fall back to the Supabase access_token (for Supabase JWT validation).
+      const tokenToValidate = session.provider_token || session.access_token;
+
       const { data, error: fnError } = await supabase.functions.invoke("validate-token", {
-        body: { token: session.access_token },
+        body: { token: tokenToValidate },
       });
 
       if (fnError) {
@@ -95,8 +116,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
 
     async function initAuth() {
-      // Local dev bypass - full admin access
-      if (isLocalDev()) {
+      // Dev-mode bypass: requires localhost + VITE_DEV_ADMIN=true
+      if (isDevAdminBypass()) {
+        console.warn("[AuthContext] Dev admin bypass active — VITE_DEV_ADMIN=true on localhost");
         if (mounted) {
           setUser({
             id: "local-dev",
@@ -123,7 +145,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (session?.user) {
           const email = session.user.email || "";
-          const role = resolveRole(email);
+
+          // Attempt server-side token validation to get authoritative roles
+          let serverRoles: string[] | undefined;
+          try {
+            const tokenToValidate = session.provider_token || session.access_token;
+            const { data: validationData } = await supabase.functions.invoke("validate-token", {
+              body: { token: tokenToValidate },
+            });
+            if (validationData?.valid && validationData?.user?.roles) {
+              serverRoles = validationData.user.roles;
+            }
+          } catch {
+            // Edge Function may not be deployed; fall back to client-side role resolution
+          }
+
+          const role = resolveRole(email, serverRoles);
           if (mounted) {
             setUser({
               id: session.user.id,
