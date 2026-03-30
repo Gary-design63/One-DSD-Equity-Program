@@ -1,10 +1,11 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
-import { Paperclip } from "lucide-react";
+import { Paperclip, LogOut } from "lucide-react";
 import { Toaster } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { EditProvider, useEditContext } from "@/context/EditContext";
+import { useAuth } from "@/context/AuthContext";
 import { AccessibilityBar, SkipLink } from "@/components/AccessibilityBar";
 import Dashboard from "@/pages/Dashboard";
 import AgentsPage from "@/pages/AgentsPage";
@@ -204,15 +205,86 @@ function Header({ onMenuClick, zoom, onZoomChange }: { onMenuClick: () => void; 
             <AccessibilityBar zoom={zoom} onZoomChange={onZoomChange} />
           </div>
 
-          <div className="flex items-center gap-2 pl-2 border-l">
-            <div className="w-7 h-7 rounded-full bg-[#003865] flex items-center justify-center text-white text-xs font-bold">
-              EC
-            </div>
-            <span className="text-sm hidden xl:inline text-muted-foreground">Equity Consultant</span>
-          </div>
+          <UserBadge />
         </div>
       </header>
     </>
+  );
+}
+
+function UserBadge() {
+  const { user, logout, isAuthenticated } = useAuth();
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="flex items-center gap-2 pl-2 border-l">
+        <div className="w-7 h-7 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-xs font-bold">
+          ?
+        </div>
+      </div>
+    );
+  }
+
+  const initials = user.name
+    .split(" ")
+    .map(n => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  return (
+    <div className="flex items-center gap-2 pl-2 border-l">
+      <div className="w-7 h-7 rounded-full bg-[#003865] flex items-center justify-center text-white text-xs font-bold">
+        {initials}
+      </div>
+      <div className="hidden xl:flex flex-col">
+        <span className="text-xs font-medium text-foreground leading-tight">{user.name}</span>
+        <span className="text-[10px] text-muted-foreground leading-tight">{user.role.replace(/-/g, " ")}</span>
+      </div>
+      <button
+        onClick={logout}
+        className="text-muted-foreground hover:text-foreground ml-1"
+        title="Sign out"
+        aria-label="Sign out"
+      >
+        <LogOut className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
+function LoginScreen() {
+  const { login, error, isLoading } = useAuth();
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-[#003865] to-[#001d33] flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md text-center">
+        <div className="w-16 h-16 bg-[#78BE21] rounded-xl flex items-center justify-center mx-auto mb-4">
+          <span className="text-white text-xl font-bold">DSD</span>
+        </div>
+        <h1 className="text-2xl font-bold text-[#003865] mb-1" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
+          One <span className="text-[#FFB71B]">DSD</span> Equity Program
+        </h1>
+        <p className="text-sm text-muted-foreground mb-6">
+          Minnesota DHS — Disability Services Division
+        </p>
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-4">
+            {error}
+          </div>
+        )}
+        <Button
+          onClick={login}
+          disabled={isLoading}
+          className="w-full bg-[#003865] hover:bg-[#002a4d] text-white py-3"
+        >
+          {isLoading ? "Signing in..." : "Sign in with Microsoft"}
+        </Button>
+        <p className="text-xs text-muted-foreground mt-4">
+          Use your organization Microsoft account (@state.mn.us)
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -271,6 +343,27 @@ function AppShell() {
 }
 
 export default function App() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Show loading state while checking auth
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 bg-[#78BE21] rounded-xl flex items-center justify-center mx-auto mb-3 animate-pulse">
+            <span className="text-white text-lg font-bold">DSD</span>
+          </div>
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login screen if not authenticated
+  if (!isAuthenticated) {
+    return <LoginScreen />;
+  }
+
   return (
     <EditProvider>
       <AppShell />

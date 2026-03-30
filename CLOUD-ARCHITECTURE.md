@@ -55,20 +55,20 @@ GitHub Repo  ──push to main──►  Lovable Build  ──deploys──► 
 - Supabase credentials held by: **Gary Bellows** — credentials must be transferred to a shared DSD service account (see Section 5)
 - Row Level Security (RLS) policies must be enabled before any real staff data is stored (see Section 2.2)
 
-### 1.2 What Is Not Yet Connected
+### 1.2 Implementation Status
 
-These items are planned but not yet implemented in the codebase:
-
-| Item | Status | Priority |
-|------|--------|----------|
-| Supabase JS client in React app | Not started | High |
-| Authentication (any method) | Not started | High |
-| Real database tables (not mock `data.js`) | Not started | High |
-| Row Level Security policies | Not started | High |
-| Environment variables / secrets management | Not started | High |
-| Custom domain (dhs.mn.gov) | Not started | Medium |
-| File storage (Supabase Storage) | Not started | Medium |
-| Edge functions | Not started | Low |
+| Item | Status | Priority | Notes |
+|------|--------|----------|-------|
+| Supabase JS client in React app | **Done** | High | `src/core/supabaseClient.ts` — initialized with env vars |
+| Authentication (Entra ID) | **Done** | High | `src/context/AuthContext.tsx` — Supabase OAuth with Azure AD; localhost auto-admin bypass for dev |
+| Server-side token validation | **Done** | High | `supabase/functions/validate-token/` — validates Azure AD JWTs against JWKS |
+| Server-side file storage | **Done** | High | `supabase/functions/blob-storage/` — Azure Blob or Supabase Storage fallback |
+| Server-side PDF/report export | **Done** | Medium | `supabase/functions/export-pdf/` — print-optimized HTML reports |
+| Azure Static Web Apps deployment | **Done** | Medium | `.github/workflows/azure-swa-deploy.yml` + `staticwebapp.config.json` |
+| Environment variables / secrets | **Done** | High | `.env.example` with all variables documented; Edge Function secrets for server-side keys |
+| Real database tables (not mock `data.js`) | Not started | High | Schema defined in Section 5.2; tables not yet created in Supabase |
+| Row Level Security policies | Not started | High | Example policies in Section 2.2; not yet applied |
+| Custom domain (dhs.mn.gov) | Not started | Medium | Requires MNIT DNS coordination |
 
 ---
 
@@ -81,10 +81,12 @@ DSD staff already have state-issued Microsoft/Azure AD accounts. Using Azure AD 
 - Multi-factor authentication (MFA) is inherited from the state's existing Azure AD policies
 - Account lifecycle (onboarding/offboarding) is managed by MNIT, not by this program
 
-**Implementation path:**
+**Implementation status:** The React/Supabase auth flow is implemented in `src/context/AuthContext.tsx`. Server-side token validation is handled by the `validate-token` Supabase Edge Function. The legacy `public/auth.js` MSAL implementation is superseded by this approach.
+
+**Remaining setup steps:**
 1. Register the app in Azure AD (requires MNIT cooperation or an existing DHS app registration)
-2. Add `@supabase/supabase-js` and configure the Supabase project to use Azure AD as an OAuth provider
-3. Replace the current MSAL-based auth in `public/auth.js` with the React/Supabase auth flow
+2. Configure the Supabase project to use Azure AD as an OAuth provider (Supabase Dashboard > Auth > Providers > Azure)
+3. Set Edge Function secrets: `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`
 4. Test with a non-production Azure AD tenant before going live
 
 **Alternative (simpler, lower compliance posture):** Supabase email/password auth
@@ -146,6 +148,44 @@ VITE_AZURE_TENANT_ID=<DHS Azure AD tenant ID>
 ```
 
 5. **Rotate credentials** whenever a team member with access leaves. Document the rotation in this file under Section 5.
+
+---
+
+## 2.5 Server-Side Services (Supabase Edge Functions)
+
+The platform uses **Supabase Edge Functions** for all operations that must run server-side. These are Deno-based serverless functions deployed to Supabase infrastructure. They have access to secrets (Azure AD client secret, Supabase service role key, Azure Storage keys) that must never be exposed to the browser.
+
+| Function | Path | Purpose |
+|----------|------|---------|
+| `validate-token` | `supabase/functions/validate-token/` | Validates Microsoft Entra ID JWTs server-side: checks signature against Azure AD JWKS, verifies issuer/audience/expiry, validates email domain |
+| `blob-storage` | `supabase/functions/blob-storage/` | Server-side file upload/download/delete/list. Uses Azure Blob Storage if configured; falls back to Supabase Storage automatically |
+| `export-pdf` | `supabase/functions/export-pdf/` | Generates print-optimized HTML reports (equity reports, policy documents, metrics snapshots, workflow summaries) with DSD branding and @page print CSS |
+
+**Why Edge Functions instead of a Node.js server?**
+- The frontend is a static SPA deployed to a CDN — there is no server to host Express/Fastify
+- Edge Functions run on Supabase infrastructure, which is already the database/auth provider
+- Zero server management, auto-scaling, and no additional hosting cost
+- Secrets stay in Supabase (never in browser environment variables)
+- If DSD/MNIT decides to move to a traditional backend later, the function logic can be ported directly to Express routes
+
+**Deploying Edge Functions:**
+```bash
+supabase link --project-ref pmwqakhmcudwokupzsfj
+supabase secrets set AZURE_TENANT_ID=<value> AZURE_CLIENT_ID=<value> AZURE_CLIENT_SECRET=<value>
+supabase functions deploy validate-token
+supabase functions deploy blob-storage
+supabase functions deploy export-pdf
+```
+
+**Edge Function secrets (set via Supabase CLI or Dashboard):**
+| Secret | Required | Purpose |
+|--------|----------|---------|
+| `AZURE_TENANT_ID` | Yes (for Entra ID) | Azure AD tenant for JWT validation |
+| `AZURE_CLIENT_ID` | Yes (for Entra ID) | App registration client ID |
+| `AZURE_CLIENT_SECRET` | Yes (for Entra ID) | App registration client secret |
+| `AZURE_STORAGE_ACCOUNT` | Optional | Azure Blob Storage account name |
+| `AZURE_STORAGE_KEY` | Optional | Azure Blob Storage access key |
+| `AZURE_STORAGE_CONTAINER` | Optional | Container name (default: `one-dsd-files`) |
 
 ---
 
