@@ -448,10 +448,6 @@ export default function App() {
     );
   }
 
-  if (!isAuthenticated) {
-    return <AppShell />;
-  }
-
   return (
     <EditProvider>
       <AppShell />
